@@ -34,7 +34,7 @@ export function getOrCreateMaterial(
   return m
 }
 
-function applyPixelSettings(tex: Texture) {
+export function applyPixelSettings(tex: Texture) {
   if (CONFIGURED_TEXTURES.has(tex)) return
   tex.magFilter = NearestFilter
   tex.minFilter = NearestMipmapLinearFilter

@@ -2,9 +2,10 @@
 
 import { useMemo } from 'react'
 import { useTexture } from '@react-three/drei'
-import { CanvasTexture, MeshStandardMaterial, type Texture } from 'three'
+import { CanvasTexture, MeshStandardMaterial } from 'three'
 import {
   BOX_GEOMETRY,
+  applyPixelSettings,
   getOrCreateMaterial,
   usePixelTexture,
   type BlockProps,
@@ -12,41 +13,44 @@ import {
 
 export const GRASS_TINT = '#7CBD6B'
 
-function useGrassSideTexture(): Texture {
-  const dirt = usePixelTexture('/textures/dirt.png')
-  const overlay = usePixelTexture('/textures/grass_block_side_overlay.png')
-  return useMemo(() => {
-    const size = 16
+export function useGrassBlockMaterials(): MeshStandardMaterial[] {
+  const topTex = usePixelTexture('/textures/grass_block_top.png')
+  const dirtTex = usePixelTexture('/textures/dirt.png')
+  const overlayTex = usePixelTexture('/textures/grass_block_side_overlay.png')
+
+  const sideTex = useMemo(() => {
+    // useTexture suspends, so both images are guaranteed loaded here
+    const dirtImg = dirtTex.image as HTMLImageElement
+    const size = dirtImg.naturalWidth || 16
     const canvas = document.createElement('canvas')
     canvas.width = size
     canvas.height = size
     const ctx = canvas.getContext('2d')!
     ctx.imageSmoothingEnabled = false
-    const dirtImg = dirt.image as HTMLImageElement | undefined
-    const overlayImg = overlay.image as HTMLImageElement | undefined
-    if (dirtImg) ctx.drawImage(dirtImg, 0, 0, size, size)
-    if (overlayImg) {
-      const oc = document.createElement('canvas')
-      oc.width = size
-      oc.height = size
-      const octx = oc.getContext('2d')!
-      octx.imageSmoothingEnabled = false
-      octx.drawImage(overlayImg, 0, 0, size, size)
-      octx.globalCompositeOperation = 'multiply'
-      octx.fillStyle = GRASS_TINT
-      octx.fillRect(0, 0, size, size)
-      octx.globalCompositeOperation = 'destination-in'
-      octx.drawImage(overlayImg, 0, 0, size, size)
-      ctx.drawImage(oc, 0, 0)
-    }
-    return new CanvasTexture(canvas)
-  }, [dirt, overlay])
-}
 
-export function useGrassBlockMaterials(): MeshStandardMaterial[] {
-  const topTex = usePixelTexture('/textures/grass_block_top.png')
-  const dirtTex = usePixelTexture('/textures/dirt.png')
-  const sideTex = useGrassSideTexture()
+    // Dirt base
+    ctx.drawImage(dirtImg, 0, 0, size, size)
+
+    // Tinted overlay on top
+    const overlayImg = overlayTex.image as HTMLImageElement
+    const oc = document.createElement('canvas')
+    oc.width = size
+    oc.height = size
+    const octx = oc.getContext('2d')!
+    octx.imageSmoothingEnabled = false
+    octx.drawImage(overlayImg, 0, 0, size, size)
+    octx.globalCompositeOperation = 'multiply'
+    octx.fillStyle = GRASS_TINT
+    octx.fillRect(0, 0, size, size)
+    octx.globalCompositeOperation = 'destination-in'
+    octx.drawImage(overlayImg, 0, 0, size, size)
+    ctx.drawImage(oc, 0, 0)
+
+    const tex = new CanvasTexture(canvas)
+    applyPixelSettings(tex)
+    return tex
+  }, [dirtTex, overlayTex])
+
   return useMemo(() => {
     const top = getOrCreateMaterial(
       'grass:top',
@@ -56,10 +60,7 @@ export function useGrassBlockMaterials(): MeshStandardMaterial[] {
       'grass:bottom',
       () => new MeshStandardMaterial({ map: dirtTex })
     )
-    const side = getOrCreateMaterial(
-      'grass:side',
-      () => new MeshStandardMaterial({ map: sideTex })
-    )
+    const side = new MeshStandardMaterial({ map: sideTex })
     return [side, side, top, bottom, side, side]
   }, [topTex, dirtTex, sideTex])
 }
