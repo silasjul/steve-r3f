@@ -5,11 +5,11 @@ import { useGLTF, useAnimations } from '@react-three/drei'
 import { useControls, folder } from 'leva'
 import { Group } from 'three'
 
-useGLTF.preload('/steve.glb')
+useGLTF.preload('/models/steve.glb')
 
 export default function Steve() {
   const group = useRef<Group>(null)
-  const { scene, animations } = useGLTF('/steve.glb')
+  const { scene, animations } = useGLTF('/models/steve.glb')
   const { actions, names } = useAnimations(animations, group)
   const activeAction = useRef(actions[names[0]] ?? null)
   const speedRef = useRef(1)
