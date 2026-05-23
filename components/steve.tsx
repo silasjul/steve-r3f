@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import { useControls, folder } from 'leva'
-import { Group } from 'three'
+import { Box3, Group, Mesh } from 'three'
 
 useGLTF.preload('/models/steve.glb')
+
+const TARGET_HEIGHT_BLOCKS = 1.8
 
 export default function Steve() {
   const group = useRef<Group>(null)
@@ -16,9 +18,10 @@ export default function Steve() {
 
   const animationOptions = names.length > 0 ? names : ['none']
 
-  const { animation, speed, freeze } = useControls({
-    Animation: folder(
+  const { animation, speed, freeze, scaleMultiplier } = useControls({
+    Steve: folder(
       {
+        scaleMultiplier: { value: 1.5, min: 1.3, max: 1.8, step: 0.01, label: 'Scale' },
         freeze: { value: false, label: 'Freeze' },
         animation: {
           value: animationOptions[1],
@@ -29,6 +32,25 @@ export default function Steve() {
       { collapsed: true }
     ),
   })
+
+  const { autoScale, footOffset } = useMemo(() => {
+    const box = new Box3().setFromObject(scene)
+    const height = box.max.y - box.min.y
+    const auto = height > 0 ? TARGET_HEIGHT_BLOCKS / height : 1
+    return { autoScale: auto, footOffset: -box.min.y * auto }
+  }, [scene])
+
+  useEffect(() => {
+    scene.traverse((obj) => {
+      if ((obj as Mesh).isMesh) {
+        obj.castShadow = true
+        obj.receiveShadow = true
+      }
+    })
+  }, [scene])
+
+  const finalScale = autoScale * scaleMultiplier
+  const finalY = footOffset * scaleMultiplier
 
   useEffect(() => {
     Object.values(actions).forEach((a) => a?.stop())
@@ -48,5 +70,5 @@ export default function Steve() {
     }
   }, [speed])
 
-  return <primitive ref={group} object={scene} />
+  return <primitive ref={group} object={scene} scale={finalScale} position={[0, finalY, 0]} />
 }

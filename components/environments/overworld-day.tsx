@@ -47,7 +47,7 @@ export default function OverworldDay() {
         ),
         Bloom: folder(
           {
-            bloom: { value: 0.2, min: 0, max: 3, step: 0.01, label: 'Intensity' },
+            bloom: { value: 0, min: 0, max: 3, step: 0.01, label: 'Intensity' },
             bloomThreshold: { value: 0.9, min: 0, max: 1, step: 0.01, label: 'Threshold' },
           },
           { collapsed: true }
@@ -74,6 +74,15 @@ export default function OverworldDay() {
         position={[sunDir[0] * lightDist, sunDir[1] * lightDist, sunDir[2] * lightDist]}
         intensity={sunInt}
         color={sunColor}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-15}
+        shadow-camera-right={15}
+        shadow-camera-top={15}
+        shadow-camera-bottom={-15}
+        shadow-camera-near={0.5}
+        shadow-camera-far={100}
+        shadow-bias={-0.0005}
       />
 
       <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
