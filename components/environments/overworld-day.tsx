@@ -21,10 +21,10 @@ export default function OverworldDay() {
         bg: { value: '#87ceeb', label: 'Background' },
         Sky: folder(
           {
-            skyElev: { value: 45, min: -10, max: 90, step: 0.5, label: 'Elevation' },
-            skyAzimuth: { value: 180, min: 0, max: 360, step: 1, label: 'Azimuth' },
-            skyTurb: { value: 10, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
-            skyRayl: { value: 3, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
+            skyElev: { value: 45.5, min: -10, max: 90, step: 0.5, label: 'Elevation' },
+            skyAzimuth: { value: 140, min: 0, max: 360, step: 1, label: 'Azimuth' },
+            skyTurb: { value: 20, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
+            skyRayl: { value: 0.55, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
           },
           { collapsed: true }
         ),

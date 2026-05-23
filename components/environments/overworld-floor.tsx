@@ -16,7 +16,7 @@ export default function OverworldFloor() {
     'Overworld Floor': folder(
       {
         speed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
-        radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
+        radius: { value: 5, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
       },
       { collapsed: true }
     ),
