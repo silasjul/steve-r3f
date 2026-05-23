@@ -33,7 +33,7 @@ export default function SceneControls() {
   return (
     <>
       <PerspectiveCamera ref={cameraRef} makeDefault position={[0, 5, 10]} fov={60} />
-      <OrbitControls enabled={orbitEnabled} target={[0, 4, 0]} />
+      <OrbitControls enabled={orbitEnabled} target={[0, 0.5, 0]} />
     </>
   )
 }
