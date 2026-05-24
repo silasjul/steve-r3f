@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { MeshStandardMaterial } from 'three'
 import {
-  BOX_GEOMETRY,
+  PLANE_GEOMETRY,
   getOrCreateMaterial,
   useAnimatedFrameTexture,
   type BlockProps,
@@ -26,5 +26,12 @@ export default function Water(props: BlockProps) {
       ),
     [tex]
   )
-  return <mesh {...props} geometry={BOX_GEOMETRY} material={material} />
+  return (
+    <mesh
+      rotation-x={-Math.PI / 2}
+      {...props}
+      geometry={PLANE_GEOMETRY}
+      material={material}
+    />
+  )
 }

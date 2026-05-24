@@ -5,6 +5,8 @@ import { Stars } from '@react-three/drei'
 import { DirectionalLight } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import TileLooper from '../_tile-looper'
+import EndTile, { END_TILE_LENGTH } from './tile'
 
 export default function End() {
   const sunRef = useRef<DirectionalLight>(null)
@@ -15,6 +17,7 @@ export default function End() {
     ambientInt, sunInt, sunColor,
     starCount, starSaturation,
     bloom, bloomThreshold,
+    walkSpeed,
   } = useControls({
     End: folder(
       {
@@ -49,6 +52,12 @@ export default function End() {
           },
           { collapsed: true }
         ),
+        Movement: folder(
+          {
+            walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: true }
     ),
@@ -68,6 +77,12 @@ export default function End() {
       />
 
       <Stars radius={100} depth={50} count={starCount} factor={4} saturation={starSaturation} fade />
+
+      <TileLooper
+        Tile={EndTile}
+        tileLength={END_TILE_LENGTH}
+        speed={walkSpeed}
+      />
 
       <EffectComposer>
         <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />

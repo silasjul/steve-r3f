@@ -1,7 +1,7 @@
 'use client'
 
-import { SimpleCubeBlock, type BlockProps } from './_block'
+import { SimplePlaneBlock, type BlockProps } from './_block'
 
 export default function Dirt(props: BlockProps) {
-  return <SimpleCubeBlock texturePath="/textures/dirt.png" {...props} />
+  return <SimplePlaneBlock texturePath="/textures/dirt.png" {...props} />
 }

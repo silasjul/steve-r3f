@@ -1,10 +1,10 @@
 'use client'
 
-import { SimpleCubeBlock, type BlockProps } from './_block'
+import { SimplePlaneBlock, type BlockProps } from './_block'
 
 export default function Glowstone(props: BlockProps) {
   return (
-    <SimpleCubeBlock
+    <SimplePlaneBlock
       texturePath="/textures/glowstone.png"
       emissive="#ffcc55"
       emissiveIntensity={1.5}

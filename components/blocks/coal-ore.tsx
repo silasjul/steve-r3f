@@ -1,7 +1,7 @@
 'use client'
 
-import { SimpleCubeBlock, type BlockProps } from './_block'
+import { SimplePlaneBlock, type BlockProps } from './_block'
 
 export default function CoalOre(props: BlockProps) {
-  return <SimpleCubeBlock texturePath="/textures/coal_ore.png" {...props} />
+  return <SimplePlaneBlock texturePath="/textures/coal_ore.png" {...props} />
 }

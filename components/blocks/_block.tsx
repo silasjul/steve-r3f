@@ -3,7 +3,6 @@
 import { useEffect, useMemo } from 'react'
 import { useTexture } from '@react-three/drei'
 import {
-  BoxGeometry,
   MeshStandardMaterial,
   NearestFilter,
   NearestMipmapLinearFilter,
@@ -16,7 +15,6 @@ import type { ThreeElements } from '@react-three/fiber'
 
 export type BlockProps = ThreeElements['mesh']
 
-export const BOX_GEOMETRY = new BoxGeometry(1, 1, 1)
 export const PLANE_GEOMETRY = new PlaneGeometry(1, 1)
 
 const MATERIAL_CACHE = new Map<string, MeshStandardMaterial>()
@@ -101,11 +99,11 @@ export function useSharedPixelMaterial(
   }, [tex, path, tint, emissive, emissiveIntensity, transparent, opacity])
 }
 
-interface SimpleCubeBlockProps extends BlockProps, PixelMaterialOptions {
+interface SimplePlaneBlockProps extends BlockProps, PixelMaterialOptions {
   texturePath: string
 }
 
-export function SimpleCubeBlock({
+export function SimplePlaneBlock({
   texturePath,
   tint,
   emissive,
@@ -113,7 +111,7 @@ export function SimpleCubeBlock({
   transparent,
   opacity,
   ...meshProps
-}: SimpleCubeBlockProps) {
+}: SimplePlaneBlockProps) {
   const material = useSharedPixelMaterial(texturePath, {
     tint,
     emissive,
@@ -123,8 +121,9 @@ export function SimpleCubeBlock({
   })
   return (
     <mesh
+      rotation-x={-Math.PI / 2}
       {...meshProps}
-      geometry={BOX_GEOMETRY}
+      geometry={PLANE_GEOMETRY}
       material={material}
       castShadow
       receiveShadow

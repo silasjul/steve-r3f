@@ -4,6 +4,8 @@ import { useRef } from 'react'
 import { DirectionalLight } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import TileLooper from '../_tile-looper'
+import NetherTile, { NETHER_TILE_LENGTH } from './tile'
 
 export default function Nether() {
   const sunRef = useRef<DirectionalLight>(null)
@@ -13,6 +15,7 @@ export default function Nether() {
     fogColor, fogNear, fogFar,
     ambientInt, sunInt, sunColor,
     bloom, bloomThreshold,
+    walkSpeed,
   } = useControls({
     Nether: folder(
       {
@@ -40,6 +43,12 @@ export default function Nether() {
           },
           { collapsed: true }
         ),
+        Movement: folder(
+          {
+            walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: true }
     ),
@@ -56,6 +65,12 @@ export default function Nether() {
         position={[0, 10, 0]}
         intensity={sunInt}
         color={sunColor}
+      />
+
+      <TileLooper
+        Tile={NetherTile}
+        tileLength={NETHER_TILE_LENGTH}
+        speed={walkSpeed}
       />
 
       <EffectComposer>

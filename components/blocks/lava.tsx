@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { MeshStandardMaterial } from 'three'
 import {
-  BOX_GEOMETRY,
+  PLANE_GEOMETRY,
   getOrCreateMaterial,
   useAnimatedFrameTexture,
   type BlockProps,
@@ -27,8 +27,9 @@ export default function Lava(props: BlockProps) {
   )
   return (
     <mesh
+      rotation-x={-Math.PI / 2}
       {...props}
-      geometry={BOX_GEOMETRY}
+      geometry={PLANE_GEOMETRY}
       material={material}
       castShadow
       receiveShadow

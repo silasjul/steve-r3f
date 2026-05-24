@@ -1,7 +1,7 @@
 'use client'
 
-import { SimpleCubeBlock, type BlockProps } from './_block'
+import { SimplePlaneBlock, type BlockProps } from './_block'
 
 export default function EndStone(props: BlockProps) {
-  return <SimpleCubeBlock texturePath="/textures/end_stone.png" {...props} />
+  return <SimplePlaneBlock texturePath="/textures/end_stone.png" {...props} />
 }
