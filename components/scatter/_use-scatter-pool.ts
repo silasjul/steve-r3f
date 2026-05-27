@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { DynamicDrawUsage, InstancedMesh, Object3D } from 'three'
+import {
+  DynamicDrawUsage,
+  Euler,
+  InstancedMesh,
+  MathUtils,
+  Matrix4,
+  Object3D,
+  Quaternion,
+  Vector3,
+} from 'three'
 import { useScatterWorld } from './_scatter-context'
 import type {
   MeshRefCallback,
@@ -10,11 +19,37 @@ import type {
   ScatterPoolHandle,
 } from './_scatter-types'
 
-const dummy = new Object3D()
-
 // Browsers throttle rAF on blur/visibility change; the resumed frame's delta
 // can be seconds. Clamping avoids ground overshoot + simultaneous mass-recycle.
 const MAX_DT = 1 / 30
+
+// Frame-local scratch objects — module scope avoids per-frame allocation and
+// these are written-then-read in a single synchronous loop body.
+const dummy = new Object3D()
+const modelMatrix = new Matrix4()
+const finalMatrix = new Matrix4()
+const modelEuler = new Euler()
+const modelQuat = new Quaternion()
+const modelOffset = new Vector3()
+const modelScaleVec = new Vector3()
+
+interface PoolState {
+  positions: Float32Array
+  scales: Float32Array
+  rotations: Float32Array
+  variants: Uint8Array
+  initialized: Uint8Array
+}
+
+function createState(capacity: number): PoolState {
+  return {
+    positions: new Float32Array(capacity * 2),
+    scales: new Float32Array(capacity),
+    rotations: new Float32Array(capacity),
+    variants: new Uint8Array(capacity),
+    initialized: new Uint8Array(capacity),
+  }
+}
 
 function pickWeighted(weights: readonly number[]): number {
   let total = 0
@@ -30,67 +65,107 @@ function pickWeighted(weights: readonly number[]): number {
 
 export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
   const { speed, radius, occupancy } = useScatterWorld()
+  const meshCount = Math.max(1, config.meshCount)
 
-  // Latest config visible to the frame loop without re-binding refs.
+  // Latest props mirrored into refs — assignment happens in useEffect (post
+  // commit), never during render, so React Compiler's "no ref writes during
+  // render" rule is satisfied.
   const configRef = useRef(config)
-  configRef.current = config
-  const worldRef = useRef({ speed, radius })
-  worldRef.current = { speed, radius }
-  const occupancyRef = useRef(occupancy)
-  occupancyRef.current = occupancy
-
-  // Per-instance buffers. Reallocated only when capacity/variantCount change.
-  const state = useMemo(() => {
-    const cap = config.capacity
-    const vc = Math.max(1, config.variantCount)
-    return {
-      positions: new Float32Array(cap * 2),
-      scales: new Float32Array(cap),
-      rotations: new Float32Array(cap),
-      variants: new Uint8Array(cap),
-      initialized: new Uint8Array(cap),
-      meshes: new Array<InstancedMesh | null>(vc).fill(null),
-      counters: new Uint32Array(vc),
-    }
-  }, [config.capacity, config.variantCount])
-
-  // Radius is the spatial domain itself, so when it changes we re-roll every
-  // slot via uniform-disc placement next frame. Without this, growing the
-  // radius leaves the old cluster centered and the new outer ring stays empty
-  // until items happen to drift past the back edge.
+  const worldRef = useRef({ speed, radius, occupancy })
   useEffect(() => {
-    state.initialized.fill(0)
-    state.positions.fill(0)
-  }, [radius, state])
+    configRef.current = config
+    worldRef.current = { speed, radius, occupancy }
+  })
 
-  // Stable ref callbacks per variant. Setting usage to dynamic avoids three's
-  // re-upload warning since matrices change every frame.
-  const meshRefs = useMemo<MeshRefCallback[]>(() => {
-    return Array.from({ length: Math.max(1, config.variantCount) }, (_, v) => (
-      mesh: InstancedMesh | null
-    ) => {
-      state.meshes[v] = mesh
-      if (mesh) mesh.instanceMatrix.setUsage(DynamicDrawUsage)
+  // Mutable buffers. Allocated lazily inside useFrame the first time it runs;
+  // never read or written during render so the compiler treats them as inert
+  // ref containers (which is what useRef is for).
+  const stateRef = useRef<PoolState | null>(null)
+  const meshesRef = useRef<(InstancedMesh | null)[]>([])
+  const countersRef = useRef<Uint32Array | null>(null)
+
+  // Reset every slot when the spatial domain changes — without this, growing
+  // the radius leaves the old cluster centered and the new ring stays empty.
+  useEffect(() => {
+    const s = stateRef.current
+    if (s) {
+      s.initialized.fill(0)
+      s.positions.fill(0)
+    }
+  }, [radius])
+
+  // Optional self-registration as an occupier so other pools can blockedBy us.
+  useEffect(() => {
+    if (!config.registerAsOccupier) return
+    return occupancy.register(config.name, (qx, qz) => {
+      const s = stateRef.current
+      if (!s) return false
+      const cfg = configRef.current
+      for (let i = 0; i < cfg.capacity; i++) {
+        if (!s.initialized[i]) continue
+        const dx = s.positions[i * 2] - qx
+        const dz = s.positions[i * 2 + 1] - qz
+        const r = cfg.footprint * s.scales[i] * 0.5
+        if (dx * dx + dz * dz < r * r) return true
+      }
+      return false
     })
-  }, [config.variantCount, state])
+  }, [occupancy, config.name, config.registerAsOccupier])
+
+  // Stable per-mesh ref callbacks. The useMemo return is itself read-only;
+  // the callbacks route writes through meshesRef (a useRef), which is the
+  // documented mutable container — so React Compiler's immutability rule
+  // doesn't tie this array to downstream `mesh.count = ...` mutations.
+  const meshRefs = useMemo<MeshRefCallback[]>(
+    () =>
+      Array.from({ length: meshCount }, (_, k) => (mesh: InstancedMesh | null) => {
+        meshesRef.current[k] = mesh
+        if (mesh) mesh.instanceMatrix.setUsage(DynamicDrawUsage)
+      }),
+    [meshCount]
+  )
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, MAX_DT)
     const cfg = configRef.current
-    const { speed: spd, radius: r } = worldRef.current
-    const occ = occupancyRef.current
+    const { speed: spd, radius: r, occupancy: occ } = worldRef.current
+    const variantCount = Math.max(1, cfg.variantCount ?? meshCount)
+
+    // Lazy buffer allocation. capacity is constant in every consumer, so this
+    // runs exactly once per pool instance.
+    if (stateRef.current === null) stateRef.current = createState(cfg.capacity)
+    if (countersRef.current === null || countersRef.current.length !== meshCount) {
+      countersRef.current = new Uint32Array(meshCount)
+    }
+    const state = stateRef.current
+    const counters = countersRef.current
+    const meshes = meshesRef.current
+
     const target = Math.min(cfg.targetCount, cfg.capacity)
     const r2 = r * r
-    const positions = state.positions
-    const scales = state.scales
-    const rotations = state.rotations
-    const variants = state.variants
-    const initialized = state.initialized
-    const counters = state.counters
-    const meshes = state.meshes
+    const { positions, scales, rotations, variants, initialized } = state
     counters.fill(0)
     const spawnSign = spd === 0 ? 1 : -Math.sign(spd)
     const edgeBand = 1.5
+    const selfAvoidFactor = cfg.selfAvoidFactor ?? 0
+    const fanAll = cfg.fanAllMeshes === true
+
+    // Pre-compose the model fix-up matrix once per frame.
+    const mdl = cfg.model
+    if (mdl) {
+      modelEuler.set(
+        MathUtils.degToRad(mdl.rotX),
+        MathUtils.degToRad(mdl.rotY),
+        MathUtils.degToRad(mdl.rotZ),
+        'XYZ'
+      )
+      modelQuat.setFromEuler(modelEuler)
+      modelOffset.set(mdl.offsetX, mdl.offsetY, mdl.offsetZ)
+      modelScaleVec.setScalar(mdl.scale)
+      modelMatrix.compose(modelOffset, modelQuat, modelScaleVec)
+    }
+
+    let writeIdx = 0  // only used in fan mode
 
     for (let i = 0; i < target; i++) {
       let x = positions[i * 2]
@@ -103,60 +178,82 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
       }
 
       if (needSpawn) {
+        const isFresh = !initialized[i]
+        // Hide this slot from self-avoid so a recycling instance doesn't
+        // reject every nearby position because of its own outgoing ghost.
+        initialized[i] = 0
         let placed = false
-        for (let tries = 0; tries < 6; tries++) {
+        const triesMax = selfAvoidFactor > 0 ? 16 : 6
+        for (let tries = 0; tries < triesMax; tries++) {
           let cx: number, cz: number
-          if (initialized[i]) {
-            const halfX = r - 0.1
-            cx = (Math.random() * 2 - 1) * halfX
-            const zMax = Math.sqrt(Math.max(0, r2 - cx * cx))
-            cz = spawnSign * (zMax - Math.random() * edgeBand)
-          } else {
+          if (isFresh) {
             const t = Math.random() * Math.PI * 2
             const rr = Math.sqrt(Math.random()) * r
             cx = Math.cos(t) * rr
             cz = Math.sin(t) * rr
+          } else {
+            const halfX = r - 0.1
+            cx = (Math.random() * 2 - 1) * halfX
+            const zMax = Math.sqrt(Math.max(0, r2 - cx * cx))
+            cz = spawnSign * (zMax - Math.random() * edgeBand)
           }
           if (occ.isBlocked(cx, cz, cfg.blockedBy, cfg.avoidWalkCorridor)) continue
-          x = cx
-          z = cz
-          placed = true
-          break
+          if (selfAvoidFactor > 0) {
+            const minD = cfg.footprint * selfAvoidFactor
+            const minD2 = minD * minD
+            let tooClose = false
+            for (let j = 0; j < target; j++) {
+              if (j === i || !initialized[j]) continue
+              const dx = positions[j * 2] - cx
+              const dz = positions[j * 2 + 1] - cz
+              if (dx * dx + dz * dz < minD2) { tooClose = true; break }
+            }
+            if (tooClose) continue
+          }
+          x = cx; z = cz; placed = true; break
         }
         if (!placed) continue
         positions[i * 2] = x
         positions[i * 2 + 1] = z
-        const s = cfg.scaleMin + Math.random() * Math.max(0, cfg.scaleMax - cfg.scaleMin)
-        scales[i] = s
+        scales[i] = cfg.scaleMin + Math.random() * Math.max(0, cfg.scaleMax - cfg.scaleMin)
         rotations[i] = cfg.rotateRandom ? Math.random() * Math.PI * 2 : 0
-        const vc = Math.max(1, cfg.variantCount)
-        variants[i] = cfg.variantWeights && cfg.variantWeights.length === vc
+        variants[i] = cfg.variantWeights && cfg.variantWeights.length === variantCount
           ? pickWeighted(cfg.variantWeights)
-          : Math.floor(Math.random() * vc)
+          : Math.floor(Math.random() * variantCount)
         initialized[i] = 1
       } else {
         positions[i * 2 + 1] = z
       }
 
-      const v = variants[i]
-      const mesh = meshes[v]
-      if (!mesh) continue
       dummy.position.set(x, 0, z)
       dummy.rotation.set(0, rotations[i], 0)
       dummy.scale.setScalar(scales[i])
       dummy.updateMatrix()
-      const slot = counters[v]
-      mesh.setMatrixAt(slot, dummy.matrix)
-      counters[v] = slot + 1
+      const outMatrix = mdl ? finalMatrix.multiplyMatrices(dummy.matrix, modelMatrix) : dummy.matrix
+
+      if (fanAll) {
+        for (let k = 0; k < meshCount; k++) {
+          const mesh = meshes[k]
+          if (mesh) mesh.setMatrixAt(writeIdx, outMatrix)
+        }
+        writeIdx++
+      } else {
+        const v = variants[i]
+        const mesh = meshes[v]
+        if (!mesh) continue
+        const slot = counters[v]
+        mesh.setMatrixAt(slot, outMatrix)
+        counters[v] = slot + 1
+      }
     }
 
-    for (let v = 0; v < meshes.length; v++) {
-      const mesh = meshes[v]
+    for (let k = 0; k < meshCount; k++) {
+      const mesh = meshes[k]
       if (!mesh) continue
-      mesh.count = counters[v]
+      mesh.count = fanAll ? writeIdx : counters[k]
       mesh.instanceMatrix.needsUpdate = true
     }
   })
 
-  return useMemo<ScatterPoolHandle>(() => ({ meshRefs }), [meshRefs])
+  return { meshRefs }
 }

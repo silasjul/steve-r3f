@@ -36,8 +36,8 @@ export default function End() {
         Fog: folder(
           {
             fogColor: { value: '#1a0033', label: 'Color' },
-            fogNear: { value: 30, min: 0, max: 200, step: 1, label: 'Near' },
-            fogFar: { value: 180, min: 10, max: 1000, step: 1, label: 'Far' },
+            fogNear: { value: 30, min: 0, max: 30, step: 1, label: 'Near' },
+            fogFar: { value: 180, min: 5, max: 100, step: 1, label: 'Far' },
           },
           { collapsed: true }
         ),

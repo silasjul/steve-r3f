@@ -10,10 +10,10 @@ import { modelControlsSchema } from './_use-model-controls'
 import { useScatterPool } from './_use-scatter-pool'
 import { useScatterWorld } from './_scatter-context'
 
-useGLTF.preload('/models/tree.glb')
+useGLTF.preload('/models/pig.glb')
 
-const POOL_NAME = 'trees'
-const MAX_DENSITY = 0.1
+const POOL_NAME = 'pigs'
+const MAX_DENSITY = 0.05
 const CAPACITY = Math.max(8, Math.ceil(MAX_TILE_COUNT * MAX_DENSITY))
 
 interface SubMesh {
@@ -21,16 +21,14 @@ interface SubMesh {
   material: Material
 }
 
-function useTreeSubMeshes(): SubMesh[] {
-  const { scene } = useGLTF('/models/tree.glb')
+function usePigSubMeshes(): SubMesh[] {
+  const { scene } = useGLTF('/models/pig.glb')
   return useMemo(() => {
     const out: SubMesh[] = []
     scene.updateMatrixWorld(true)
     scene.traverse((obj: Object3D) => {
       const m = obj as Mesh
       if (!m.isMesh) return
-      // Bake world transform into cloned geometry so the InstancedMesh sits
-      // at the origin and placement is driven purely by per-instance matrices.
       const geom = m.geometry.clone()
       geom.applyMatrix4(m.matrixWorld)
       const mat = Array.isArray(m.material) ? m.material[0] : m.material
@@ -40,26 +38,26 @@ function useTreeSubMeshes(): SubMesh[] {
   }, [scene])
 }
 
-export default function TreeScatter() {
-  const subMeshes = useTreeSubMeshes()
+export default function PigScatter() {
+  const subMeshes = usePigSubMeshes()
   const { radius } = useScatterWorld()
 
   const pool = useControls('Tiles', {
-    Trees: folder(
+    Pigs: folder(
       poolControlsSchema({
-        density: 0.008,
-        scaleMin: 1,
-        scaleMax: 1,
-        rotateRandom: false,
+        density: 0.006,
+        scaleMin: 0.9,
+        scaleMax: 1.1,
+        rotateRandom: true,
         avoidWalkCorridor: true,
-        footprint: 3.0,
+        footprint: 1.2,
       }),
       { collapsed: true }
     ),
   })
 
   const model = useControls('Models', {
-    Tree: folder(modelControlsSchema({ oy: -3, s: 7, scaleMax: 20 }), { collapsed: true }),
+    Pig: folder(modelControlsSchema({ oy: 0.64, s: 0.08, scaleMax: 5 }), { collapsed: true }),
   })
 
   const targetCount = Math.min(
@@ -72,7 +70,8 @@ export default function TreeScatter() {
     capacity: CAPACITY,
     targetCount,
     footprint: pool.footprint as number,
-    blockedBy: [],
+    // Trees: block. Grass / flowers: pigs are allowed on top of them.
+    blockedBy: ['trees'],
     avoidWalkCorridor: pool.avoidWalkCorridor as boolean,
     scaleMin: pool.scaleMin as number,
     scaleMax: pool.scaleMax as number,
@@ -81,7 +80,6 @@ export default function TreeScatter() {
     variantCount: 1,
     fanAllMeshes: true,
     selfAvoidFactor: 1.2,
-    registerAsOccupier: true,
     model,
   })
 

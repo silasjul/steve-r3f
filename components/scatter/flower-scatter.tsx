@@ -106,6 +106,7 @@ export default function FlowerScatter() {
     scaleMin: controlValues.scaleMin as number,
     scaleMax: controlValues.scaleMax as number,
     rotateRandom: controlValues.rotateRandom as boolean,
+    meshCount: FLOWER_VARIANTS.length,
     variantCount: FLOWER_VARIANTS.length,
     variantWeights,
   })

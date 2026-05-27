@@ -65,6 +65,7 @@ export default function ShortGrassScatter() {
     scaleMin: scaleMin as number,
     scaleMax: scaleMax as number,
     rotateRandom: rotateRandom as boolean,
+    meshCount: 1,
     variantCount: 1,
   })
 

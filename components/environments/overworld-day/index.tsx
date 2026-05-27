@@ -11,6 +11,7 @@ import { ScatterWorld } from "@/components/scatter/_scatter-context";
 import ShortGrassScatter from "@/components/scatter/short-grass-scatter";
 import FlowerScatter from "@/components/scatter/flower-scatter";
 import TreeScatter from "@/components/scatter/tree-scatter";
+import PigScatter from "@/components/scatter/pig-scatter";
 
 useTexture.preload("/textures/grass_block_top.png");
 useTexture.preload("/textures/short_grass.png");
@@ -27,9 +28,12 @@ export default function OverworldDay() {
 
   const {
     bg,
+    fogEnabled,
+    fogMode,
     fogColor,
     fogNear,
     fogFar,
+    fogDensity,
     skyElev,
     skyAzimuth,
     skyTurb,
@@ -109,9 +113,22 @@ export default function OverworldDay() {
         ),
         Fog: folder(
           {
-            fogColor: { value: "#c9dff5", label: "Color" },
-            fogNear: { value: 60, min: 0, max: 200, step: 1, label: "Near" },
-            fogFar: { value: 500, min: 10, max: 1000, step: 1, label: "Far" },
+            fogEnabled: { value: false, label: "Enabled" },
+            fogMode: {
+              value: "linear",
+              options: { Linear: "linear", Exponential: "exp2" },
+              label: "Mode",
+            },
+            fogColor: { value: "#b6cb9b", label: "Color" },
+            fogDensity: {
+              value: 0.06,
+              min: 0,
+              max: 0.2,
+              step: 0.001,
+              label: "Density (exp2)",
+            },
+            fogNear: { value: 8, min: 0, max: 40, step: 0.01, label: "Near" },
+            fogFar: { value: 18, min: 5, max: 40, step: 0.01, label: "Far" },
           },
           { collapsed: true },
         ),
@@ -177,7 +194,12 @@ export default function OverworldDay() {
   return (
     <>
       <color attach="background" args={[bg]} />
-      <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
+      {fogEnabled &&
+        (fogMode === "exp2" ? (
+          <fogExp2 attach="fog" args={[fogColor, fogDensity]} />
+        ) : (
+          <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
+        ))}
 
       <ambientLight intensity={ambientInt} />
       <directionalLight
@@ -217,6 +239,7 @@ export default function OverworldDay() {
         <TreeScatter />
         <ShortGrassScatter />
         <FlowerScatter />
+        <PigScatter />
       </ScatterWorld>
 
       <EffectComposer>
