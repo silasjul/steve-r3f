@@ -20,7 +20,7 @@ export function poolControlsSchema(defaults: PoolControlDefaults) {
       value: defaults.density,
       min: 0,
       max: 2,
-      step: 0.01,
+      step: 0.001,
       label: 'Density',
     },
     scaleMin: { value: defaults.scaleMin, min: 0.05, max: 3, step: 0.01, label: 'Scale Min' },

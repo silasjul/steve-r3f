@@ -60,7 +60,7 @@ export default function ShortGrassScatter() {
     capacity: CAPACITY,
     targetCount,
     footprint: footprint as number,
-    blockedBy: [],
+    blockedBy: ['trees'],
     avoidWalkCorridor: avoidWalkCorridor as boolean,
     scaleMin: scaleMin as number,
     scaleMax: scaleMax as number,

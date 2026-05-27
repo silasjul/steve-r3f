@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { DynamicDrawUsage, InstancedMesh, Object3D } from 'three'
 import { useScatterWorld } from './_scatter-context'
@@ -53,6 +53,15 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
       counters: new Uint32Array(vc),
     }
   }, [config.capacity, config.variantCount])
+
+  // Radius is the spatial domain itself, so when it changes we re-roll every
+  // slot via uniform-disc placement next frame. Without this, growing the
+  // radius leaves the old cluster centered and the new outer ring stays empty
+  // until items happen to drift past the back edge.
+  useEffect(() => {
+    state.initialized.fill(0)
+    state.positions.fill(0)
+  }, [radius, state])
 
   // Stable ref callbacks per variant. Setting usage to dynamic avoids three's
   // re-upload warning since matrices change every frame.

@@ -101,7 +101,7 @@ export default function FlowerScatter() {
     capacity: CAPACITY,
     targetCount,
     footprint: controlValues.footprint as number,
-    blockedBy: [],
+    blockedBy: ['trees'],
     avoidWalkCorridor: controlValues.avoidWalkCorridor as boolean,
     scaleMin: controlValues.scaleMin as number,
     scaleMax: controlValues.scaleMax as number,
