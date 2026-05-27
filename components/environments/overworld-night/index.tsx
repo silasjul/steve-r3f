@@ -1,12 +1,14 @@
 'use client'
 
 import { useMemo, useRef } from 'react'
-import { Sky, Stars } from '@react-three/drei'
+import { Sky, Stars, useTexture } from '@react-three/drei'
 import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Ground, { MAX_RADIUS } from '../_ground'
 import { useGrassTopMaterial } from '@/components/blocks/grass-block'
+
+useTexture.preload('/textures/grass_block_top.png')
 
 export default function OverworldNight() {
   const sunRef = useRef<DirectionalLight>(null)
@@ -67,10 +69,15 @@ export default function OverworldNight() {
         Movement: folder(
           {
             walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
-            radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
           },
           { collapsed: true }
         ),
+      },
+      { collapsed: true }
+    ),
+    Tiles: folder(
+      {
+        radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
       },
       { collapsed: true }
     ),

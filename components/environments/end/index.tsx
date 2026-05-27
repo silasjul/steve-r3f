@@ -1,12 +1,14 @@
 'use client'
 
 import { useRef } from 'react'
-import { Stars } from '@react-three/drei'
+import { Stars, useTexture } from '@react-three/drei'
 import { DirectionalLight } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Ground, { MAX_RADIUS } from '../_ground'
 import { useSharedPixelMaterial } from '@/components/blocks/_block'
+
+useTexture.preload('/textures/end_stone.png')
 
 export default function End() {
   const sunRef = useRef<DirectionalLight>(null)
@@ -56,10 +58,15 @@ export default function End() {
         Movement: folder(
           {
             walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
-            radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
           },
           { collapsed: true }
         ),
+      },
+      { collapsed: true }
+    ),
+    Tiles: folder(
+      {
+        radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
       },
       { collapsed: true }
     ),

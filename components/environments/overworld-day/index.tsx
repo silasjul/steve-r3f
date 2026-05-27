@@ -1,12 +1,24 @@
 'use client'
 
 import { useMemo, useRef } from 'react'
-import { Sky } from '@react-three/drei'
+import { Sky, useTexture } from '@react-three/drei'
 import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Ground, { MAX_RADIUS } from '../_ground'
 import { useGrassTopMaterial } from '@/components/blocks/grass-block'
+import { ScatterWorld } from '@/components/scatter/_scatter-context'
+import ShortGrassScatter from '@/components/scatter/short-grass-scatter'
+import FlowerScatter from '@/components/scatter/flower-scatter'
+
+useTexture.preload('/textures/grass_block_top.png')
+useTexture.preload('/textures/short_grass.png')
+useTexture.preload('/textures/poppy.png')
+useTexture.preload('/textures/oxeye_daisy.png')
+useTexture.preload('/textures/white_tulip.png')
+useTexture.preload('/textures/orange_tulip.png')
+useTexture.preload('/textures/pink_tulip.png')
+useTexture.preload('/textures/red_tulip.png')
 
 export default function OverworldDay() {
   const sunRef = useRef<DirectionalLight>(null)
@@ -18,7 +30,7 @@ export default function OverworldDay() {
     skyElev, skyAzimuth, skyTurb, skyRayl,
     ambientInt, sunInt, sunColor, lightDist,
     bloom, bloomThreshold,
-    walkSpeed, radius,
+    walkSpeed, radius, walkCorridorWidth,
   } = useControls({
     'Overworld Day': folder(
       {
@@ -69,6 +81,7 @@ export default function OverworldDay() {
     Tiles: folder(
       {
         radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
+        walkCorridorWidth: { value: 3, min: 0, max: 12, step: 0.1, label: 'Walk Corridor' },
       },
       { collapsed: true }
     ),
@@ -105,6 +118,11 @@ export default function OverworldDay() {
       <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
 
       <Ground material={material} radius={radius} speed={walkSpeed} />
+
+      <ScatterWorld speed={walkSpeed} radius={radius} walkCorridorWidth={walkCorridorWidth}>
+        <ShortGrassScatter />
+        <FlowerScatter />
+      </ScatterWorld>
 
       <EffectComposer>
         <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />

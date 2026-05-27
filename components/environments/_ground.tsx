@@ -9,6 +9,20 @@ export const MAX_RADIUS = 25
 const MAX_COUNT = (MAX_RADIUS * 2 + 1) ** 2
 const tempObject = new Object3D()
 
+/** Count of 1×1 tiles inside the disc — mirrors the loop in <Ground>. */
+export function getTileCount(radius: number): number {
+  let count = 0
+  const r2 = radius * radius - 0.5
+  for (let x = -radius; x <= radius; x++) {
+    const rem = r2 - x * x
+    if (rem < 0) continue
+    count += 2 * Math.floor(Math.sqrt(rem)) + 1
+  }
+  return count
+}
+
+export const MAX_TILE_COUNT = getTileCount(MAX_RADIUS)
+
 type Props = {
   material: MeshStandardMaterial
   radius: number
@@ -54,10 +68,13 @@ export default function Ground({ material, radius, speed }: Props) {
     mesh.instanceMatrix.needsUpdate = true
   }, [tiles])
 
-  useFrame((_, delta) => {
+  useFrame((_, rawDt) => {
     const group = groupRef.current
     if (!group) return
-    group.position.z += speed * delta
+    // Clamp dt so a throttled-rAF resume (tab blur) can't push the group past
+    // the ±0.5 snap window in a single step.
+    const dt = Math.min(rawDt, 1 / 30)
+    group.position.z += speed * dt
     if (group.position.z > 0.5) group.position.z -= 1
     else if (group.position.z < -0.5) group.position.z += 1
   })
