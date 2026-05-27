@@ -4,18 +4,19 @@ import { useRef } from 'react'
 import { DirectionalLight } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
-import TileLooper from '../_tile-looper'
-import NetherTile, { NETHER_TILE_LENGTH } from './tile'
+import Ground, { MAX_RADIUS } from '../_ground'
+import { useSharedPixelMaterial } from '@/components/blocks/_block'
 
 export default function Nether() {
   const sunRef = useRef<DirectionalLight>(null)
+  const material = useSharedPixelMaterial('/textures/netherrack.png')
 
   const {
     bg,
     fogColor, fogNear, fogFar,
     ambientInt, sunInt, sunColor,
     bloom, bloomThreshold,
-    walkSpeed,
+    walkSpeed, radius,
   } = useControls({
     Nether: folder(
       {
@@ -46,6 +47,7 @@ export default function Nether() {
         Movement: folder(
           {
             walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
+            radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
           },
           { collapsed: true }
         ),
@@ -67,11 +69,7 @@ export default function Nether() {
         color={sunColor}
       />
 
-      <TileLooper
-        Tile={NetherTile}
-        tileLength={NETHER_TILE_LENGTH}
-        speed={walkSpeed}
-      />
+      <Ground material={material} radius={radius} speed={walkSpeed} />
 
       <EffectComposer>
         <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />

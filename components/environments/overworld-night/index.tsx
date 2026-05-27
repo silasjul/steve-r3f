@@ -5,11 +5,12 @@ import { Sky, Stars } from '@react-three/drei'
 import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
-import TileLooper from '../_tile-looper'
-import OverworldNightTile, { OVERWORLD_NIGHT_TILE_LENGTH } from './tile'
+import Ground, { MAX_RADIUS } from '../_ground'
+import { useGrassTopMaterial } from '@/components/blocks/grass-block'
 
 export default function OverworldNight() {
   const sunRef = useRef<DirectionalLight>(null)
+  const material = useGrassTopMaterial()
 
   const {
     bg,
@@ -18,7 +19,7 @@ export default function OverworldNight() {
     ambientInt, sunInt, sunColor, lightDist,
     starCount, starSaturation,
     bloom, bloomThreshold,
-    walkSpeed,
+    walkSpeed, radius,
   } = useControls({
     'Overworld Night': folder(
       {
@@ -66,6 +67,7 @@ export default function OverworldNight() {
         Movement: folder(
           {
             walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
+            radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
           },
           { collapsed: true }
         ),
@@ -105,11 +107,7 @@ export default function OverworldNight() {
       <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
       <Stars radius={100} depth={50} count={starCount} factor={4} saturation={starSaturation} fade />
 
-      <TileLooper
-        Tile={OverworldNightTile}
-        tileLength={OVERWORLD_NIGHT_TILE_LENGTH}
-        speed={walkSpeed}
-      />
+      <Ground material={material} radius={radius} speed={walkSpeed} />
 
       <EffectComposer>
         <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />

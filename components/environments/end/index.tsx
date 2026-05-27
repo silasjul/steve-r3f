@@ -5,11 +5,12 @@ import { Stars } from '@react-three/drei'
 import { DirectionalLight } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
-import TileLooper from '../_tile-looper'
-import EndTile, { END_TILE_LENGTH } from './tile'
+import Ground, { MAX_RADIUS } from '../_ground'
+import { useSharedPixelMaterial } from '@/components/blocks/_block'
 
 export default function End() {
   const sunRef = useRef<DirectionalLight>(null)
+  const material = useSharedPixelMaterial('/textures/end_stone.png')
 
   const {
     bg,
@@ -17,7 +18,7 @@ export default function End() {
     ambientInt, sunInt, sunColor,
     starCount, starSaturation,
     bloom, bloomThreshold,
-    walkSpeed,
+    walkSpeed, radius,
   } = useControls({
     End: folder(
       {
@@ -55,6 +56,7 @@ export default function End() {
         Movement: folder(
           {
             walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
+            radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
           },
           { collapsed: true }
         ),
@@ -78,11 +80,7 @@ export default function End() {
 
       <Stars radius={100} depth={50} count={starCount} factor={4} saturation={starSaturation} fade />
 
-      <TileLooper
-        Tile={EndTile}
-        tileLength={END_TILE_LENGTH}
-        speed={walkSpeed}
-      />
+      <Ground material={material} radius={radius} speed={walkSpeed} />
 
       <EffectComposer>
         <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />

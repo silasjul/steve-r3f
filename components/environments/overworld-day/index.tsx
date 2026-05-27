@@ -5,11 +5,12 @@ import { Sky } from '@react-three/drei'
 import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
-import TileLooper from '../_tile-looper'
-import OverworldDayTile, { OVERWORLD_DAY_TILE_LENGTH } from './tile'
+import Ground, { MAX_RADIUS } from '../_ground'
+import { useGrassTopMaterial } from '@/components/blocks/grass-block'
 
 export default function OverworldDay() {
   const sunRef = useRef<DirectionalLight>(null)
+  const material = useGrassTopMaterial()
 
   const {
     bg,
@@ -17,7 +18,7 @@ export default function OverworldDay() {
     skyElev, skyAzimuth, skyTurb, skyRayl,
     ambientInt, sunInt, sunColor, lightDist,
     bloom, bloomThreshold,
-    walkSpeed,
+    walkSpeed, radius,
   } = useControls({
     'Overworld Day': folder(
       {
@@ -61,6 +62,13 @@ export default function OverworldDay() {
           },
           { collapsed: true }
         ),
+
+      },
+      { collapsed: true }
+    ),
+    Tiles: folder(
+      {
+        radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
       },
       { collapsed: true }
     ),
@@ -96,11 +104,7 @@ export default function OverworldDay() {
 
       <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
 
-      <TileLooper
-        Tile={OverworldDayTile}
-        tileLength={OVERWORLD_DAY_TILE_LENGTH}
-        speed={walkSpeed}
-      />
+      <Ground material={material} radius={radius} speed={walkSpeed} />
 
       <EffectComposer>
         <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />
