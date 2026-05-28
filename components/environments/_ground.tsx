@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import { Group, InstancedMesh, MeshStandardMaterial, Object3D } from 'three'
 import { PLANE_GEOMETRY } from '@/components/blocks/_block'
 
-export const MAX_RADIUS = 25
+export const MAX_RADIUS = 100
 const MAX_COUNT = (MAX_RADIUS * 2 + 1) ** 2
 const tempObject = new Object3D()
 

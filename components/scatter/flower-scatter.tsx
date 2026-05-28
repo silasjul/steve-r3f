@@ -12,6 +12,7 @@ import { getCrossPlaneGeometry } from './_cross-plane-geometry'
 import { poolControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
 import { useScatterWorld } from './_scatter-context'
+import { applyWindShader } from '@/components/wind'
 
 const POOL_NAME = 'flowers'
 const MAX_DENSITY = 2
@@ -28,20 +29,20 @@ const FLOWER_VARIANTS = [
 
 function useFlowerMaterial(path: string, key: string): MeshStandardMaterial {
   const tex = usePixelTexture(path)
-  return useMemo(
-    () =>
-      getOrCreateMaterial(
-        `flower:${key}`,
-        () =>
-          new MeshStandardMaterial({
-            map: tex,
-            transparent: true,
-            alphaTest: 0.5,
-            side: DoubleSide,
-          })
-      ),
-    [tex, key]
-  )
+  return useMemo(() => {
+    const m = getOrCreateMaterial(
+      `flower:${key}`,
+      () =>
+        new MeshStandardMaterial({
+          map: tex,
+          transparent: true,
+          alphaTest: 0.5,
+          side: DoubleSide,
+        })
+    )
+    applyWindShader(m)
+    return m
+  }, [tex, key])
 }
 
 export default function FlowerScatter() {

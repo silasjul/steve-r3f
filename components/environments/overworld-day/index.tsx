@@ -5,13 +5,16 @@ import { Sky, useTexture } from "@react-three/drei";
 import { DirectionalLight, MathUtils } from "three";
 import { useControls, folder } from "leva";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import Ground, { MAX_RADIUS } from "../_ground";
+import Ground from "../_ground";
 import { useGrassTopMaterial } from "@/components/blocks/grass-block";
 import { ScatterWorld } from "@/components/scatter/_scatter-context";
 import ShortGrassScatter from "@/components/scatter/short-grass-scatter";
 import FlowerScatter from "@/components/scatter/flower-scatter";
 import TreeScatter from "@/components/scatter/tree-scatter";
 import PigScatter from "@/components/scatter/pig-scatter";
+import WorldCurve from "@/components/world-curve";
+import { useEnvStore } from "@/store/env-store";
+import { WindClock, useWindControls } from "@/components/wind";
 
 useTexture.preload("/textures/grass_block_top.png");
 useTexture.preload("/textures/short_grass.png");
@@ -25,6 +28,8 @@ useTexture.preload("/textures/red_tulip.png");
 export default function OverworldDay() {
   const sunRef = useRef<DirectionalLight>(null);
   const material = useGrassTopMaterial();
+  const radius = useEnvStore((s) => s.radius);
+  const walkSpeed = useEnvStore((s) => s.walkSpeed);
 
   const {
     bg,
@@ -44,8 +49,6 @@ export default function OverworldDay() {
     lightDist,
     bloom,
     bloomThreshold,
-    walkSpeed,
-    radius,
     walkCorridorWidth,
   } = useControls({
     "Overworld Day": folder(
@@ -145,14 +148,14 @@ export default function OverworldDay() {
           },
           { collapsed: true },
         ),
-        Movement: folder(
+        Scatter: folder(
           {
-            walkSpeed: {
-              value: -1,
-              min: -3,
-              max: 3,
+            walkCorridorWidth: {
+              value: 6,
+              min: 0,
+              max: 12,
               step: 0.1,
-              label: "Walk Speed",
+              label: "Walk Corridor",
             },
           },
           { collapsed: true },
@@ -160,26 +163,9 @@ export default function OverworldDay() {
       },
       { collapsed: true },
     ),
-    Tiles: folder(
-      {
-        radius: {
-          value: 16,
-          min: 4,
-          max: MAX_RADIUS,
-          step: 1,
-          label: "Radius",
-        },
-        walkCorridorWidth: {
-          value: 6,
-          min: 0,
-          max: 12,
-          step: 0.1,
-          label: "Walk Corridor",
-        },
-      },
-      { collapsed: true },
-    ),
   });
+
+  useWindControls();
 
   const sunDir = useMemo<[number, number, number]>(() => {
     const phi = MathUtils.degToRad(90 - skyElev);
@@ -228,6 +214,9 @@ export default function OverworldDay() {
         turbidity={skyTurb}
         rayleigh={skyRayl}
       />
+
+      <WorldCurve />
+      <WindClock />
 
       <Ground material={material} radius={radius} speed={walkSpeed} />
 

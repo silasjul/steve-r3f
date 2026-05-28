@@ -5,14 +5,17 @@ import { Stars, useTexture } from '@react-three/drei'
 import { DirectionalLight } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
-import Ground, { MAX_RADIUS } from '../_ground'
+import Ground from '../_ground'
 import { useSharedPixelMaterial } from '@/components/blocks/_block'
+import { useEnvStore } from '@/store/env-store'
 
 useTexture.preload('/textures/end_stone.png')
 
 export default function End() {
   const sunRef = useRef<DirectionalLight>(null)
   const material = useSharedPixelMaterial('/textures/end_stone.png')
+  const radius = useEnvStore((s) => s.radius)
+  const walkSpeed = useEnvStore((s) => s.walkSpeed)
 
   const {
     bg,
@@ -20,7 +23,6 @@ export default function End() {
     ambientInt, sunInt, sunColor,
     starCount, starSaturation,
     bloom, bloomThreshold,
-    walkSpeed, radius,
   } = useControls({
     End: folder(
       {
@@ -55,18 +57,6 @@ export default function End() {
           },
           { collapsed: true }
         ),
-        Movement: folder(
-          {
-            walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
-          },
-          { collapsed: true }
-        ),
-      },
-      { collapsed: true }
-    ),
-    Tiles: folder(
-      {
-        radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
       },
       { collapsed: true }
     ),

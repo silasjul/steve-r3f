@@ -5,14 +5,17 @@ import { Sky, Stars, useTexture } from '@react-three/drei'
 import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
-import Ground, { MAX_RADIUS } from '../_ground'
+import Ground from '../_ground'
 import { useGrassTopMaterial } from '@/components/blocks/grass-block'
+import { useEnvStore } from '@/store/env-store'
 
 useTexture.preload('/textures/grass_block_top.png')
 
 export default function OverworldNight() {
   const sunRef = useRef<DirectionalLight>(null)
   const material = useGrassTopMaterial()
+  const radius = useEnvStore((s) => s.radius)
+  const walkSpeed = useEnvStore((s) => s.walkSpeed)
 
   const {
     bg,
@@ -21,7 +24,6 @@ export default function OverworldNight() {
     ambientInt, sunInt, sunColor, lightDist,
     starCount, starSaturation,
     bloom, bloomThreshold,
-    walkSpeed, radius,
   } = useControls({
     'Overworld Night': folder(
       {
@@ -66,18 +68,6 @@ export default function OverworldNight() {
           },
           { collapsed: true }
         ),
-        Movement: folder(
-          {
-            walkSpeed: { value: -1, min: -3, max: 3, step: 0.1, label: 'Walk Speed' },
-          },
-          { collapsed: true }
-        ),
-      },
-      { collapsed: true }
-    ),
-    Tiles: folder(
-      {
-        radius: { value: 10, min: 4, max: MAX_RADIUS, step: 1, label: 'Radius' },
       },
       { collapsed: true }
     ),

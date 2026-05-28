@@ -13,6 +13,7 @@ import { getCrossPlaneGeometry } from './_cross-plane-geometry'
 import { poolControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
 import { useScatterWorld } from './_scatter-context'
+import { applyWindShader } from '@/components/wind'
 
 const POOL_NAME = 'short-grass'
 const MAX_DENSITY = 2
@@ -20,21 +21,21 @@ const CAPACITY = MAX_TILE_COUNT * MAX_DENSITY
 
 export default function ShortGrassScatter() {
   const tex = usePixelTexture('/textures/short_grass.png')
-  const material = useMemo(
-    () =>
-      getOrCreateMaterial(
-        'short-grass-scatter',
-        () =>
-          new MeshStandardMaterial({
-            map: tex,
-            color: GRASS_TINT,
-            transparent: true,
-            alphaTest: 0.5,
-            side: DoubleSide,
-          })
-      ),
-    [tex]
-  )
+  const material = useMemo(() => {
+    const m = getOrCreateMaterial(
+      'short-grass-scatter',
+      () =>
+        new MeshStandardMaterial({
+          map: tex,
+          color: GRASS_TINT,
+          transparent: true,
+          alphaTest: 0.5,
+          side: DoubleSide,
+        })
+    )
+    applyWindShader(m)
+    return m
+  }, [tex])
   const geometry = useMemo(() => getCrossPlaneGeometry(), [])
   const { radius } = useScatterWorld()
 

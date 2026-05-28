@@ -5,6 +5,7 @@ import OverworldDay from './environments/overworld-day'
 import OverworldNight from './environments/overworld-night'
 import Nether from './environments/nether'
 import End from './environments/end'
+import SharedEnvControls from './environments/_shared-controls'
 
 const MAP = {
   'overworld-day': OverworldDay,
@@ -16,5 +17,10 @@ const MAP = {
 export default function Environment() {
   const world = useWorldStore((s) => s.world)
   const World = MAP[world]
-  return <World />
+  return (
+    <>
+      <SharedEnvControls />
+      <World />
+    </>
+  )
 }
