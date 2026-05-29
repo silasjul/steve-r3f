@@ -13,7 +13,7 @@ export const netherConfig: EnvConfig = {
 
   scene: {
     bg: "#2d0a00",
-    walkCorridorWidth: 2,
+    walkCorridorWidth: 2.5,
     floorRadius: 25,
     lighting: {
       ambient: 0.6,
