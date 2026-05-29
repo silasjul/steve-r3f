@@ -61,14 +61,14 @@ export const netherConfig: EnvConfig = {
 
     netherCeilingQuartz: {
       pool: {
-        density: 0.06,
+        density: 0.04,
         scaleMin: 1,
         scaleMax: 1,
         rotateRandom: false,
         avoidWalkCorridor: false,
         footprint: 1.0,
       },
-      cluster: 0.7,
+      cluster: 0,
     },
 
     glowstone: {

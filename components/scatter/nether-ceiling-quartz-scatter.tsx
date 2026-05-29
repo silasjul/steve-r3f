@@ -14,7 +14,7 @@ useTexture.preload('/textures/nether_quartz_ore.png')
 
 const POOL_NAME = 'netherCeilingQuartz'
 const MAX_DENSITY = 0.25
-const ZONE_DEFAULTS = { width: 40, forwardDepth: 25, backDepth: 25 }
+const ZONE_DEFAULTS = { width: 80, forwardDepth: 60, backDepth: 60 }
 const CAPACITY = Math.max(64, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 
 // Face-down plane — visible from below, flush against the ceiling underside.
@@ -84,7 +84,7 @@ export default function NetherCeilingQuartzScatter() {
     selfAvoidFactor: 1.0,
     snapToGrid: true,
     clusterBias: controlValues.cluster as number,
-    clusterSize: 8,
+    clusterSize: 5,
     registerAsOccupier: false,
     meshesRef,
     spawnZone: { width: spawnWidth, forwardDepth: spawnForward, backDepth: spawnBack },

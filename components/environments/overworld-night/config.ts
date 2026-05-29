@@ -33,7 +33,7 @@ export const overworldNightConfig: EnvConfig = {
     stars: {
       count: 8000,
       saturation: 0,
-      bright: { count: 400, factor: 8.5 },
+      bright: { count: 400, factor: 8.0 },
     },
   },
 

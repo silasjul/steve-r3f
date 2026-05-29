@@ -14,7 +14,7 @@ export const overworldDayConfig: EnvConfig = {
   scene: {
     bg: '#87ceeb',
     walkCorridorWidth: 6,
-    sky: { elev: 45.5, azimuth: 140, turb: 4, rayl: 2 },
+    sky: { elev: 32, azimuth: 135, turb: 0.3, rayl: 0.35 },
     lighting: { ambient: 0.35, sunInt: 2.2, sunColor: '#ffe0b0', lightDist: 10 },
     fog: {
       enabled: false,
@@ -24,7 +24,7 @@ export const overworldDayConfig: EnvConfig = {
       far: 18,
       density: 0.06,
     },
-    bloom: { intensity: 0.2, threshold: 0.85 },
+    bloom: { intensity: 0.1, threshold: 0.85 },
   },
 
   scatter: {
