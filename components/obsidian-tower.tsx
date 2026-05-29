@@ -140,13 +140,14 @@ const ObsidianTower = forwardRef<Group, Props>(function ObsidianTower(
     mesh.instanceMatrix.needsUpdate = true
   }, [matrices])
 
+  const phase = useRef(Math.random() * Math.PI * 2)
   const crystalRef = useRef<Mesh>(null)
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const c = crystalRef.current
     if (!c) return
-    c.rotation.y += delta * 0.6
+    c.rotation.y = phase.current + state.clock.elapsedTime * 0.6
     const baseY = h + 1.1
-    c.position.y = baseY + Math.sin(state.clock.elapsedTime * 2) * 0.3
+    c.position.y = baseY + Math.sin(state.clock.elapsedTime * 2 + phase.current) * 0.3
   })
 
   return (

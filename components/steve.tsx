@@ -16,9 +16,10 @@ export default function Steve() {
   const activeAction = useRef(actions[names[0]] ?? null)
   const speedRef = useRef(1)
 
-  const animationOptions = names.length > 0 ? names : ['none']
+  const animationOptions = useMemo(() => (names.length > 0 ? names : ['none']), [names])
+  const animIndexRef = useRef(1)
 
-  const { animation, speed, freeze, scaleMultiplier } = useControls({
+  const [{ animation, speed, freeze, scaleMultiplier }, set] = useControls(() => ({
     Steve: folder(
       {
         scaleMultiplier: { value: 1.5, min: 1.3, max: 1.8, step: 0.01, label: 'Scale' },
@@ -31,7 +32,19 @@ export default function Steve() {
       },
       { collapsed: true }
     ),
-  })
+  }))
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault()
+        animIndexRef.current = (animIndexRef.current + 1) % animationOptions.length
+        set({ animation: animationOptions[animIndexRef.current] })
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [animationOptions, set])
 
   const { autoScale, footOffset } = useMemo(() => {
     const box = new Box3().setFromObject(scene)

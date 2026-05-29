@@ -39,12 +39,12 @@ export const endConfig: EnvConfig = {
 
     obsidianTowers: {
       pool: {
-        density: 0.05,
+        density: 1,
         scaleMin: 1,
         scaleMax: 1,
         rotateRandom: false,
         avoidWalkCorridor: true,
-        footprint: 8,
+        footprint: 5,
       },
       glow: { color: "#ff7733", intensity: 50, distance: 24 },
     },
