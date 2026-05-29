@@ -9,6 +9,7 @@ import { poolControlsSchema } from './_use-pool-controls'
 import { modelControlsSchema } from './_use-model-controls'
 import { useScatterPool } from './_use-scatter-pool'
 import { useScatterWorld } from './_scatter-context'
+import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
 
 useGLTF.preload('/models/pig.glb')
 
@@ -41,23 +42,21 @@ function usePigSubMeshes(): SubMesh[] {
 export default function PigScatter() {
   const subMeshes = usePigSubMeshes()
   const { radius } = useScatterWorld()
+  const defaults = useScatterDefaults('pigs')
+  const envLabel = useEnvLabel()
 
-  const pool = useControls('Tiles', {
-    Pigs: folder(
-      poolControlsSchema({
-        density: 0.006,
-        scaleMin: 0.9,
-        scaleMax: 1.1,
-        rotateRandom: true,
-        avoidWalkCorridor: true,
-        footprint: 1.2,
-      }),
+  const pool = useControls(envLabel, {
+    Tiles: folder(
+      { Pigs: folder(poolControlsSchema(defaults.pool), { collapsed: true }) },
       { collapsed: true }
     ),
   })
 
-  const model = useControls('Models', {
-    Pig: folder(modelControlsSchema({ oy: 0.64, s: 0.08, scaleMax: 5 }), { collapsed: true }),
+  const model = useControls(envLabel, {
+    Models: folder(
+      { Pig: folder(modelControlsSchema(defaults.model), { collapsed: true }) },
+      { collapsed: true }
+    ),
   })
 
   const targetCount = Math.min(

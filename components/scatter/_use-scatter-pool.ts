@@ -23,6 +23,13 @@ import type {
 // can be seconds. Clamping avoids ground overshoot + simultaneous mass-recycle.
 const MAX_DT = 1 / 30
 
+// 8-neighbour offsets used when clusterBias > 0. Module scope so the array
+// isn't reallocated per spawn attempt.
+const CLUSTER_DIRS: ReadonlyArray<readonly [number, number]> = [
+  [1, 0], [-1, 0], [0, 1], [0, -1],
+  [1, 1], [1, -1], [-1, 1], [-1, -1],
+]
+
 // Frame-local scratch objects — module scope avoids per-frame allocation and
 // these are written-then-read in a single synchronous loop body.
 const dummy = new Object3D()
@@ -64,17 +71,17 @@ function pickWeighted(weights: readonly number[]): number {
 }
 
 export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
-  const { speed, radius, occupancy } = useScatterWorld()
+  const { speed, radius, occupancy, getGroundOffsetZ } = useScatterWorld()
   const meshCount = Math.max(1, config.meshCount)
 
   // Latest props mirrored into refs — assignment happens in useEffect (post
   // commit), never during render, so React Compiler's "no ref writes during
   // render" rule is satisfied.
   const configRef = useRef(config)
-  const worldRef = useRef({ speed, radius, occupancy })
+  const worldRef = useRef({ speed, radius, occupancy, getGroundOffsetZ })
   useEffect(() => {
     configRef.current = config
-    worldRef.current = { speed, radius, occupancy }
+    worldRef.current = { speed, radius, occupancy, getGroundOffsetZ }
   })
 
   // Mutable buffers. Allocated lazily inside useFrame the first time it runs;
@@ -101,12 +108,18 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
       const s = stateRef.current
       if (!s) return false
       const cfg = configRef.current
+      const square = cfg.snapToGrid === true
       for (let i = 0; i < cfg.capacity; i++) {
         if (!s.initialized[i]) continue
         const dx = s.positions[i * 2] - qx
         const dz = s.positions[i * 2 + 1] - qz
         const r = cfg.footprint * s.scales[i] * 0.5
-        if (dx * dx + dz * dz < r * r) return true
+        // Grid-snapped occupiers (eg. unit-tile rocks) block a square area so
+        // the footprint slider matches the visible tile extent rather than an
+        // inscribed circle that leaves tile corners unblocked.
+        if (square) {
+          if (Math.abs(dx) < r && Math.abs(dz) < r) return true
+        } else if (dx * dx + dz * dz < r * r) return true
       }
       return false
     })
@@ -128,7 +141,7 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, MAX_DT)
     const cfg = configRef.current
-    const { speed: spd, radius: r, occupancy: occ } = worldRef.current
+    const { speed: spd, radius: r, occupancy: occ, getGroundOffsetZ: getGz } = worldRef.current
     const variantCount = Math.max(1, cfg.variantCount ?? meshCount)
 
     // Lazy buffer allocation. capacity is constant in every consumer, so this
@@ -184,18 +197,50 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
         initialized[i] = 0
         let placed = false
         const triesMax = selfAvoidFactor > 0 ? 16 : 6
+        const clusterBias = cfg.clusterBias ?? 0
         for (let tries = 0; tries < triesMax; tries++) {
-          let cx: number, cz: number
-          if (isFresh) {
-            const t = Math.random() * Math.PI * 2
-            const rr = Math.sqrt(Math.random()) * r
-            cx = Math.cos(t) * rr
-            cz = Math.sin(t) * rr
-          } else {
-            const halfX = r - 0.1
-            cx = (Math.random() * 2 - 1) * halfX
-            const zMax = Math.sqrt(Math.max(0, r2 - cx * cx))
-            cz = spawnSign * (zMax - Math.random() * edgeBand)
+          let cx = 0
+          let cz = 0
+          let clustered = false
+          if (clusterBias > 0 && Math.random() < clusterBias) {
+            // Pick a random already-placed sibling as a cluster seed and
+            // offset by one tile in a random 8-neighbour direction.
+            for (let a = 0; a < 8; a++) {
+              const j = (Math.random() * target) | 0
+              if (j === i || !initialized[j]) continue
+              const sz = positions[j * 2 + 1]
+              // For recycles, restrict seeds to rocks near the leading edge so
+              // adjacent placements don't appear mid-disc.
+              if (!isFresh && spawnSign * sz < r - 4) continue
+              const sx = positions[j * 2]
+              const d = CLUSTER_DIRS[(Math.random() * 8) | 0]
+              cx = sx + d[0]
+              cz = sz + d[1]
+              if (cx * cx + cz * cz > r2) continue
+              clustered = true
+              break
+            }
+          }
+          if (!clustered) {
+            if (isFresh) {
+              const t = Math.random() * Math.PI * 2
+              const rr = Math.sqrt(Math.random()) * r
+              cx = Math.cos(t) * rr
+              cz = Math.sin(t) * rr
+            } else {
+              const halfX = r - 0.1
+              cx = (Math.random() * 2 - 1) * halfX
+              const zMax = Math.sqrt(Math.max(0, r2 - cx * cx))
+              cz = spawnSign * (zMax - Math.random() * edgeBand)
+            }
+          }
+          if (cfg.snapToGrid) {
+            // Ground tiles sit at integer + groundOffsetZ — snap to the same
+            // lattice so instances stay seated on tiles after the world has
+            // been scrolling for a while.
+            const gz = getGz()
+            cx = Math.round(cx)
+            cz = Math.round(cz - gz) + gz
           }
           if (occ.isBlocked(cx, cz, cfg.blockedBy, cfg.avoidWalkCorridor)) continue
           if (selfAvoidFactor > 0) {

@@ -13,6 +13,7 @@ import { poolControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
 import { useScatterWorld } from './_scatter-context'
 import { applyWindShader } from '@/components/wind'
+import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
 
 const POOL_NAME = 'flowers'
 const MAX_DENSITY = 2
@@ -48,6 +49,8 @@ function useFlowerMaterial(path: string, key: string): MeshStandardMaterial {
 export default function FlowerScatter() {
   const geometry = useMemo(() => getCrossPlaneGeometry(), [])
   const { radius } = useScatterWorld()
+  const defaults = useScatterDefaults('flowers')
+  const envLabel = useEnvLabel()
 
   const materials = [
     useFlowerMaterial(FLOWER_VARIANTS[0].texture, FLOWER_VARIANTS[0].key),
@@ -62,26 +65,30 @@ export default function FlowerScatter() {
     () =>
       FLOWER_VARIANTS.reduce<Record<string, { value: number; min: number; max: number; step: number; label: string }>>(
         (acc, v) => {
-          acc[`w_${v.key}`] = { value: 1, min: 0, max: 5, step: 0.1, label: v.label }
+          acc[`w_${v.key}`] = {
+            value: defaults.weights[v.key],
+            min: 0,
+            max: 5,
+            step: 0.1,
+            label: v.label,
+          }
           return acc
         },
         {}
       ),
-    []
+    [defaults.weights]
   )
 
-  const controlValues = useControls('Tiles', {
-    Flowers: folder(
+  const controlValues = useControls(envLabel, {
+    Tiles: folder(
       {
-        ...poolControlsSchema({
-          density: 0.1,
-          scaleMin: 1.0,
-          scaleMax: 1.0,
-          rotateRandom: false,
-          avoidWalkCorridor: false,
-          footprint: 0.4,
-        }),
-        ...weightExtras,
+        Flowers: folder(
+          {
+            ...poolControlsSchema(defaults.pool),
+            ...weightExtras,
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: true }
     ),
@@ -102,7 +109,7 @@ export default function FlowerScatter() {
     capacity: CAPACITY,
     targetCount,
     footprint: controlValues.footprint as number,
-    blockedBy: ['trees'],
+    blockedBy: ['trees', 'rocks'],
     avoidWalkCorridor: controlValues.avoidWalkCorridor as boolean,
     scaleMin: controlValues.scaleMin as number,
     scaleMax: controlValues.scaleMax as number,
@@ -120,7 +127,7 @@ export default function FlowerScatter() {
           ref={pool.meshRefs[i]}
           args={[geometry, materials[i], CAPACITY]}
           castShadow
-          receiveShadow={false}
+          receiveShadow
           frustumCulled={false}
           dispose={null}
         />

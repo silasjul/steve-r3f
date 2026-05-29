@@ -1,6 +1,7 @@
 'use client'
 
-import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { useFrame } from '@react-three/fiber'
 import type { OccupancyAPI, OccupancyQuery, ScatterWorldState } from './_scatter-types'
 
 const ScatterWorldContext = createContext<ScatterWorldState | null>(null)
@@ -18,6 +19,24 @@ export function ScatterWorld({ speed, radius, walkCorridorWidth, children }: Sca
   // across leva tweaks of the corridor width.
   const corridorHalfRef = useRef(walkCorridorWidth / 2)
   corridorHalfRef.current = walkCorridorWidth / 2
+
+  // Mirrors <Ground>'s `group.position.z`: same accumulation, same wrap, same
+  // dt clamp — so reading this in a scatter spawn aligns the rock with the
+  // tile under it without coupling to the Ground component.
+  const groundOffsetZRef = useRef(0)
+  useFrame((_, rawDt) => {
+    const dt = Math.min(rawDt, 1 / 30)
+    let z = groundOffsetZRef.current + speed * dt
+    if (z > 0.5) z -= 1
+    else if (z < -0.5) z += 1
+    groundOffsetZRef.current = z
+  })
+  const getGroundOffsetZ = useCallback(() => groundOffsetZRef.current, [])
+  // <Ground> resets group.position to zero when radius changes; mirror that so
+  // the two accumulators stay in lockstep across world resizes.
+  useEffect(() => {
+    groundOffsetZRef.current = 0
+  }, [radius])
 
   const occupancy = useMemo<OccupancyAPI>(
     () => ({
@@ -42,8 +61,8 @@ export function ScatterWorld({ speed, radius, walkCorridorWidth, children }: Sca
   )
 
   const value = useMemo<ScatterWorldState>(
-    () => ({ speed, radius, walkCorridorWidth, occupancy }),
-    [speed, radius, walkCorridorWidth, occupancy]
+    () => ({ speed, radius, walkCorridorWidth, occupancy, getGroundOffsetZ }),
+    [speed, radius, walkCorridorWidth, occupancy, getGroundOffsetZ]
   )
 
   return <ScatterWorldContext.Provider value={value}>{children}</ScatterWorldContext.Provider>

@@ -14,6 +14,7 @@ import { poolControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
 import { useScatterWorld } from './_scatter-context'
 import { applyWindShader } from '@/components/wind'
+import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
 
 const POOL_NAME = 'short-grass'
 const MAX_DENSITY = 2
@@ -38,18 +39,13 @@ export default function ShortGrassScatter() {
   }, [tex])
   const geometry = useMemo(() => getCrossPlaneGeometry(), [])
   const { radius } = useScatterWorld()
+  const defaults = useScatterDefaults('shortGrass')
+  const envLabel = useEnvLabel()
 
   const { density, scaleMin, scaleMax, rotateRandom, avoidWalkCorridor, footprint } =
-    useControls('Tiles', {
-      'Short Grass': folder(
-        poolControlsSchema({
-          density: 0.5,
-          scaleMin: 0.6,
-          scaleMax: 1.0,
-          rotateRandom: true,
-          avoidWalkCorridor: false,
-          footprint: 0.3,
-        }),
+    useControls(envLabel, {
+      Tiles: folder(
+        { 'Short Grass': folder(poolControlsSchema(defaults.pool), { collapsed: true }) },
         { collapsed: true }
       ),
     })
@@ -61,7 +57,7 @@ export default function ShortGrassScatter() {
     capacity: CAPACITY,
     targetCount,
     footprint: footprint as number,
-    blockedBy: ['trees'],
+    blockedBy: ['trees', 'rocks'],
     avoidWalkCorridor: avoidWalkCorridor as boolean,
     scaleMin: scaleMin as number,
     scaleMax: scaleMax as number,
@@ -75,7 +71,7 @@ export default function ShortGrassScatter() {
       ref={pool.meshRefs[0]}
       args={[geometry, material, CAPACITY]}
       castShadow
-      receiveShadow={false}
+      receiveShadow
       frustumCulled={false}
       dispose={null}
     />

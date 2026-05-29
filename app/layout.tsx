@@ -14,8 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Steve.",
-  description:
-    "You walk around a planet farming aura. Threejs and React Three Fiber.",
+  description: "Follow steve on his Aura farming journey.",
 };
 
 export default function RootLayout({

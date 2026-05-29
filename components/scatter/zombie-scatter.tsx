@@ -11,10 +11,10 @@ import { useScatterPool } from './_use-scatter-pool'
 import { useScatterWorld } from './_scatter-context'
 import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
 
-useGLTF.preload('/models/tree.glb')
+useGLTF.preload('/models/zombie.glb')
 
-const POOL_NAME = 'trees'
-const MAX_DENSITY = 0.1
+const POOL_NAME = 'zombies'
+const MAX_DENSITY = 0.05
 const CAPACITY = Math.max(8, Math.ceil(MAX_TILE_COUNT * MAX_DENSITY))
 
 interface SubMesh {
@@ -22,16 +22,14 @@ interface SubMesh {
   material: Material
 }
 
-function useTreeSubMeshes(): SubMesh[] {
-  const { scene } = useGLTF('/models/tree.glb')
+function useZombieSubMeshes(): SubMesh[] {
+  const { scene } = useGLTF('/models/zombie.glb')
   return useMemo(() => {
     const out: SubMesh[] = []
     scene.updateMatrixWorld(true)
     scene.traverse((obj: Object3D) => {
       const m = obj as Mesh
       if (!m.isMesh) return
-      // Bake world transform into cloned geometry so the InstancedMesh sits
-      // at the origin and placement is driven purely by per-instance matrices.
       const geom = m.geometry.clone()
       geom.applyMatrix4(m.matrixWorld)
       const mat = Array.isArray(m.material) ? m.material[0] : m.material
@@ -41,22 +39,22 @@ function useTreeSubMeshes(): SubMesh[] {
   }, [scene])
 }
 
-export default function TreeScatter() {
-  const subMeshes = useTreeSubMeshes()
+export default function ZombieScatter() {
+  const subMeshes = useZombieSubMeshes()
   const { radius } = useScatterWorld()
-  const defaults = useScatterDefaults('trees')
+  const defaults = useScatterDefaults('zombies')
   const envLabel = useEnvLabel()
 
   const pool = useControls(envLabel, {
     Tiles: folder(
-      { Trees: folder(poolControlsSchema(defaults.pool), { collapsed: true }) },
+      { Zombies: folder(poolControlsSchema(defaults.pool), { collapsed: true }) },
       { collapsed: true }
     ),
   })
 
   const model = useControls(envLabel, {
     Models: folder(
-      { Tree: folder(modelControlsSchema(defaults.model), { collapsed: true }) },
+      { Zombie: folder(modelControlsSchema(defaults.model), { collapsed: true }) },
       { collapsed: true }
     ),
   })
@@ -71,7 +69,7 @@ export default function TreeScatter() {
     capacity: CAPACITY,
     targetCount,
     footprint: pool.footprint as number,
-    blockedBy: [],
+    blockedBy: ['trees', 'rocks'],
     avoidWalkCorridor: pool.avoidWalkCorridor as boolean,
     scaleMin: pool.scaleMin as number,
     scaleMax: pool.scaleMax as number,
@@ -80,7 +78,6 @@ export default function TreeScatter() {
     variantCount: 1,
     fanAllMeshes: true,
     selfAvoidFactor: 1.2,
-    registerAsOccupier: true,
     model,
   })
 

@@ -1,35 +1,37 @@
-"use client";
+'use client'
 
-import { useMemo, useRef } from "react";
-import { Sky, useTexture } from "@react-three/drei";
-import { DirectionalLight, MathUtils } from "three";
-import { useControls, folder } from "leva";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import Ground from "../_ground";
-import { useGrassTopMaterial } from "@/components/blocks/grass-block";
-import { ScatterWorld } from "@/components/scatter/_scatter-context";
-import ShortGrassScatter from "@/components/scatter/short-grass-scatter";
-import FlowerScatter from "@/components/scatter/flower-scatter";
-import TreeScatter from "@/components/scatter/tree-scatter";
-import PigScatter from "@/components/scatter/pig-scatter";
-import WorldCurve from "@/components/world-curve";
-import { useEnvStore } from "@/store/env-store";
-import { WindClock, useWindControls } from "@/components/wind";
+import { useMemo, useRef } from 'react'
+import { Sky, useTexture } from '@react-three/drei'
+import { DirectionalLight, MathUtils } from 'three'
+import { useControls, folder } from 'leva'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import Ground from '../_ground'
+import { EnvConfigProvider } from '../_env-config'
+import { overworldDayConfig as C } from './config'
+import { useGrassTopMaterial } from '@/components/blocks/grass-block'
+import { ScatterWorld } from '@/components/scatter/_scatter-context'
+import ShortGrassScatter from '@/components/scatter/short-grass-scatter'
+import FlowerScatter from '@/components/scatter/flower-scatter'
+import TreeScatter from '@/components/scatter/tree-scatter'
+import PigScatter from '@/components/scatter/pig-scatter'
+import WorldCurve from '@/components/world-curve'
+import { useEnvStore } from '@/store/env-store'
+import { WindClock, useWindControls } from '@/components/wind'
 
-useTexture.preload("/textures/grass_block_top.png");
-useTexture.preload("/textures/short_grass.png");
-useTexture.preload("/textures/poppy.png");
-useTexture.preload("/textures/oxeye_daisy.png");
-useTexture.preload("/textures/white_tulip.png");
-useTexture.preload("/textures/orange_tulip.png");
-useTexture.preload("/textures/pink_tulip.png");
-useTexture.preload("/textures/red_tulip.png");
+useTexture.preload('/textures/grass_block_top.png')
+useTexture.preload('/textures/short_grass.png')
+useTexture.preload('/textures/poppy.png')
+useTexture.preload('/textures/oxeye_daisy.png')
+useTexture.preload('/textures/white_tulip.png')
+useTexture.preload('/textures/orange_tulip.png')
+useTexture.preload('/textures/pink_tulip.png')
+useTexture.preload('/textures/red_tulip.png')
 
 export default function OverworldDay() {
-  const sunRef = useRef<DirectionalLight>(null);
-  const material = useGrassTopMaterial();
-  const radius = useEnvStore((s) => s.radius);
-  const walkSpeed = useEnvStore((s) => s.walkSpeed);
+  const sunRef = useRef<DirectionalLight>(null)
+  const material = useGrassTopMaterial()
+  const radius = useEnvStore((s) => s.radius)
+  const walkSpeed = useEnvStore((s) => s.walkSpeed)
 
   const {
     bg,
@@ -51,137 +53,83 @@ export default function OverworldDay() {
     bloomThreshold,
     walkCorridorWidth,
   } = useControls({
-    "Overworld Day": folder(
+    [C.label]: folder(
       {
-        bg: { value: "#87ceeb", label: "Background" },
+        bg: { value: C.scene.bg, label: 'Background' },
         Sky: folder(
           {
-            skyElev: {
-              value: 45.5,
-              min: -10,
-              max: 90,
-              step: 0.5,
-              label: "Elevation",
-            },
-            skyAzimuth: {
-              value: 140,
-              min: 0,
-              max: 360,
-              step: 1,
-              label: "Azimuth",
-            },
-            skyTurb: {
-              value: 20,
-              min: 0,
-              max: 20,
-              step: 0.1,
-              label: "Turbidity",
-            },
-            skyRayl: {
-              value: 0.55,
-              min: 0,
-              max: 6,
-              step: 0.01,
-              label: "Rayleigh",
-            },
+            skyElev: { value: C.scene.sky.elev, min: -10, max: 90, step: 0.5, label: 'Elevation' },
+            skyAzimuth: { value: C.scene.sky.azimuth, min: 0, max: 360, step: 1, label: 'Azimuth' },
+            skyTurb: { value: C.scene.sky.turb, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
+            skyRayl: { value: C.scene.sky.rayl, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
           },
-          { collapsed: true },
+          { collapsed: true }
         ),
         Lighting: folder(
           {
-            ambientInt: {
-              value: 0.4,
-              min: 0,
-              max: 2,
-              step: 0.01,
-              label: "Ambient",
-            },
-            sunInt: {
-              value: 1.8,
-              min: 0,
-              max: 5,
-              step: 0.05,
-              label: "Sun Intensity",
-            },
-            sunColor: { value: "#fff5e0", label: "Sun Color" },
-            lightDist: {
-              value: 10,
-              min: 1,
-              max: 200,
-              step: 1,
-              label: "Distance",
-            },
+            ambientInt: { value: C.scene.lighting.ambient, min: 0, max: 2, step: 0.01, label: 'Ambient' },
+            sunInt: { value: C.scene.lighting.sunInt, min: 0, max: 5, step: 0.05, label: 'Sun Intensity' },
+            sunColor: { value: C.scene.lighting.sunColor, label: 'Sun Color' },
+            lightDist: { value: C.scene.lighting.lightDist, min: 1, max: 200, step: 1, label: 'Distance' },
           },
-          { collapsed: true },
+          { collapsed: true }
         ),
         Fog: folder(
           {
-            fogEnabled: { value: false, label: "Enabled" },
+            fogEnabled: { value: C.scene.fog.enabled, label: 'Enabled' },
             fogMode: {
-              value: "linear",
-              options: { Linear: "linear", Exponential: "exp2" },
-              label: "Mode",
+              value: C.scene.fog.mode,
+              options: { Linear: 'linear', Exponential: 'exp2' },
+              label: 'Mode',
             },
-            fogColor: { value: "#b6cb9b", label: "Color" },
-            fogDensity: {
-              value: 0.06,
-              min: 0,
-              max: 0.2,
-              step: 0.001,
-              label: "Density (exp2)",
-            },
-            fogNear: { value: 8, min: 0, max: 40, step: 0.01, label: "Near" },
-            fogFar: { value: 18, min: 5, max: 40, step: 0.01, label: "Far" },
+            fogColor: { value: C.scene.fog.color, label: 'Color' },
+            fogDensity: { value: C.scene.fog.density, min: 0, max: 0.2, step: 0.001, label: 'Density (exp2)' },
+            fogNear: { value: C.scene.fog.near, min: 0, max: 40, step: 0.01, label: 'Near' },
+            fogFar: { value: C.scene.fog.far, min: 5, max: 40, step: 0.01, label: 'Far' },
           },
-          { collapsed: true },
+          { collapsed: true }
         ),
         Bloom: folder(
           {
-            bloom: { value: 0, min: 0, max: 3, step: 0.01, label: "Intensity" },
-            bloomThreshold: {
-              value: 0.9,
-              min: 0,
-              max: 1,
-              step: 0.01,
-              label: "Threshold",
-            },
+            bloom: { value: C.scene.bloom.intensity, min: 0, max: 3, step: 0.01, label: 'Intensity' },
+            bloomThreshold: { value: C.scene.bloom.threshold, min: 0, max: 1, step: 0.01, label: 'Threshold' },
           },
-          { collapsed: true },
+          { collapsed: true }
         ),
         Scatter: folder(
           {
             walkCorridorWidth: {
-              value: 6,
+              value: C.scene.walkCorridorWidth,
               min: 0,
               max: 12,
               step: 0.1,
-              label: "Walk Corridor",
+              label: 'Walk Corridor',
             },
           },
-          { collapsed: true },
+          { collapsed: true }
         ),
       },
-      { collapsed: true },
+      { collapsed: true }
     ),
-  });
+  })
 
-  useWindControls();
+  useWindControls()
 
   const sunDir = useMemo<[number, number, number]>(() => {
-    const phi = MathUtils.degToRad(90 - skyElev);
-    const theta = MathUtils.degToRad(skyAzimuth);
+    const phi = MathUtils.degToRad(90 - skyElev)
+    const theta = MathUtils.degToRad(skyAzimuth)
     return [
       Math.sin(phi) * Math.cos(theta),
       Math.cos(phi),
       Math.sin(phi) * Math.sin(theta),
-    ];
-  }, [skyElev, skyAzimuth]);
+    ]
+  }, [skyElev, skyAzimuth])
 
   return (
-    <>
+    <EnvConfigProvider value={C}>
       <color attach="background" args={[bg]} />
       {fogEnabled &&
-        (fogMode === "exp2" ? (
+        (fogMode === 'exp2' ? (
           <fogExp2 attach="fog" args={[fogColor, fogDensity]} />
         ) : (
           <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
@@ -190,11 +138,7 @@ export default function OverworldDay() {
       <ambientLight intensity={ambientInt} />
       <directionalLight
         ref={sunRef}
-        position={[
-          sunDir[0] * lightDist,
-          sunDir[1] * lightDist,
-          sunDir[2] * lightDist,
-        ]}
+        position={[sunDir[0] * lightDist, sunDir[1] * lightDist, sunDir[2] * lightDist]}
         intensity={sunInt}
         color={sunColor}
         castShadow
@@ -208,23 +152,14 @@ export default function OverworldDay() {
         shadow-bias={-0.0005}
       />
 
-      <Sky
-        distance={450000}
-        sunPosition={sunDir}
-        turbidity={skyTurb}
-        rayleigh={skyRayl}
-      />
+      <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
 
       <WorldCurve />
       <WindClock />
 
       <Ground material={material} radius={radius} speed={walkSpeed} />
 
-      <ScatterWorld
-        speed={walkSpeed}
-        radius={radius}
-        walkCorridorWidth={walkCorridorWidth}
-      >
+      <ScatterWorld speed={walkSpeed} radius={radius} walkCorridorWidth={walkCorridorWidth}>
         <TreeScatter />
         <ShortGrassScatter />
         <FlowerScatter />
@@ -232,12 +167,8 @@ export default function OverworldDay() {
       </ScatterWorld>
 
       <EffectComposer>
-        <Bloom
-          intensity={bloom}
-          luminanceThreshold={bloomThreshold}
-          mipmapBlur
-        />
+        <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />
       </EffectComposer>
-    </>
-  );
+    </EnvConfigProvider>
+  )
 }
