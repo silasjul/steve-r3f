@@ -19,6 +19,7 @@ export interface OccupancyAPI {
     z: number,
     blockedBy: readonly string[],
     avoidWalkCorridor: boolean,
+    walkCorridorClearance?: number,
   ) => boolean;
 }
 
@@ -55,6 +56,10 @@ export interface ScatterPoolConfig {
   footprint: number;
   blockedBy: readonly string[];
   avoidWalkCorridor: boolean;
+  /** Extra radial padding added to the corridor half-width when checking
+   *  avoidance. Use for wide objects (e.g. obsidian towers) whose body extends
+   *  out from the placement cell so the geometry stays clear of Steve. */
+  walkCorridorClearance?: number;
   scaleMin: number;
   scaleMax: number;
   rotateRandom: boolean;

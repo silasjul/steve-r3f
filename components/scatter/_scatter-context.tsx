@@ -67,8 +67,11 @@ export function ScatterWorld({
           producersRef.current.delete(name);
         };
       },
-      isBlocked(x, _z, blockedBy, avoidWalkCorridor) {
-        if (avoidWalkCorridor && Math.abs(x) <= corridorHalfRef.current)
+      isBlocked(x, _z, blockedBy, avoidWalkCorridor, walkCorridorClearance) {
+        if (
+          avoidWalkCorridor &&
+          Math.abs(x) <= corridorHalfRef.current + (walkCorridorClearance ?? 0)
+        )
           return true;
         if (blockedBy.length === 0) return false;
         const map = producersRef.current;

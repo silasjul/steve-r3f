@@ -403,7 +403,15 @@ export function useScatterPool(config: ScatterPoolConfig): void {
             cx = Math.round(cx);
             cz = Math.round(cz - gz) + gz;
           }
-          if (occ.isBlocked(cx, cz, cfg.blockedBy, cfg.avoidWalkCorridor))
+          if (
+            occ.isBlocked(
+              cx,
+              cz,
+              cfg.blockedBy,
+              cfg.avoidWalkCorridor,
+              cfg.walkCorridorClearance,
+            )
+          )
             continue;
           if (verticalSpread > 0) {
             let cellTaken = false;

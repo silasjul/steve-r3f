@@ -122,6 +122,11 @@ export interface NetherCeilingQuartzConfig {
   cluster: number;
 }
 
+export interface ObsidianTowerConfig {
+  pool: PoolControlDefaults;
+  glow: { color: string; intensity: number; distance: number };
+}
+
 export interface GlowstoneConfig {
   pool: PoolControlDefaults;
   /** 0..1 — biases spawns into adjacent lumps rather than isolated tiles. */
@@ -157,6 +162,7 @@ export interface ScatterDefaults {
   lava?: LavaConfig;
   netherOres?: NetherOreConfig;
   netherCeilingQuartz?: NetherCeilingQuartzConfig;
+  obsidianTowers?: ObsidianTowerConfig;
 }
 
 export interface EnvConfig {

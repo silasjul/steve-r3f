@@ -14,7 +14,7 @@ useGLTF.preload('/models/enderman.glb')
 
 const POOL_NAME = 'endermen'
 const MAX_DENSITY = 0.03
-const ZONE_DEFAULTS = { width: 20, forwardDepth: 30, backDepth: 20 }
+const ZONE_DEFAULTS = { width: 40, forwardDepth: 50, backDepth: 50 }
 const CAPACITY = Math.max(8, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 
 interface SubMesh {
@@ -78,7 +78,7 @@ export default function EndermanScatter() {
     capacity: CAPACITY,
     targetCount,
     footprint: pool.footprint as number,
-    blockedBy: ['trees', 'rocks'],
+    blockedBy: ['trees', 'rocks', 'obsidianTowers'],
     avoidWalkCorridor: pool.avoidWalkCorridor as boolean,
     scaleMin: pool.scaleMin as number,
     scaleMax: pool.scaleMax as number,
