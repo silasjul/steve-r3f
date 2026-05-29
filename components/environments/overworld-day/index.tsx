@@ -14,7 +14,6 @@ import ShortGrassScatter from '@/components/scatter/short-grass-scatter'
 import FlowerScatter from '@/components/scatter/flower-scatter'
 import TreeScatter from '@/components/scatter/tree-scatter'
 import PigScatter from '@/components/scatter/pig-scatter'
-import WorldCurve from '@/components/world-curve'
 import { useEnvStore } from '@/store/env-store'
 import { WindClock, useWindControls } from '@/components/wind'
 
@@ -148,7 +147,7 @@ export default function OverworldDay() {
         shadow-camera-top={15}
         shadow-camera-bottom={-15}
         shadow-camera-near={0.5}
-        shadow-camera-far={100}
+        shadow-camera-far={250}
         shadow-bias={0.00006}
         shadow-normalBias={0.05}
         shadow-radius={1}
@@ -156,7 +155,6 @@ export default function OverworldDay() {
 
       <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
 
-      <WorldCurve />
       <WindClock />
 
       <Ground material={material} radius={radius} speed={walkSpeed} />

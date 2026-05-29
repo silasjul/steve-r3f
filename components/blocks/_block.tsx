@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import {
+  MeshBasicMaterial,
   MeshStandardMaterial,
   NearestFilter,
   NearestMipmapLinearFilter,
@@ -177,6 +178,19 @@ export interface PixelMaterialOptions {
   emissiveIntensity?: number
   transparent?: boolean
   opacity?: number
+}
+
+export function useSharedBasicPixelMaterial(path: string): MeshBasicMaterial {
+  const tex = usePixelTexture(path)
+  return useMemo(() => {
+    const key = `basic|${path}`
+    let m = MATERIAL_CACHE.get(key) as MeshBasicMaterial | undefined
+    if (!m) {
+      m = new MeshBasicMaterial({ map: tex })
+      MATERIAL_CACHE.set(key, m as unknown as MeshStandardMaterial)
+    }
+    return m
+  }, [tex, path])
 }
 
 export function useSharedPixelMaterial(

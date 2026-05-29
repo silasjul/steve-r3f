@@ -1,23 +1,23 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useControls, folder } from 'leva'
-import { DoubleSide, MeshStandardMaterial, type MeshDepthMaterial } from 'three'
+import { DoubleSide, InstancedMesh, MeshStandardMaterial, type MeshDepthMaterial } from 'three'
 import {
   getOrCreateMaterial,
   usePixelTexture,
 } from '@/components/blocks/_block'
-import { MAX_TILE_COUNT, getTileCount } from '@/components/environments/_ground'
+import { getTileCountRect } from '@/components/environments/_ground'
 import { getCrossPlaneGeometry } from './_cross-plane-geometry'
-import { poolControlsSchema } from './_use-pool-controls'
+import { poolControlsSchema, spawnZoneControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
-import { useScatterWorld } from './_scatter-context'
 import { applyWindShader, createWindDepthMaterial } from '@/components/wind'
 import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
 
 const POOL_NAME = 'flowers'
 const MAX_DENSITY = 2
-const CAPACITY = MAX_TILE_COUNT * MAX_DENSITY
+const ZONE_DEFAULTS = { width: 40, forwardDepth: 25, backDepth: 25 }
+const CAPACITY = Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY)
 
 const FLOWER_VARIANTS = [
   { key: 'poppy', label: 'Poppy', texture: '/textures/poppy.png' },
@@ -51,7 +51,6 @@ function useFlowerMaterial(
 
 export default function FlowerScatter() {
   const geometry = useMemo(() => getCrossPlaneGeometry(), [])
-  const { radius } = useScatterWorld()
   const defaults = useScatterDefaults('flowers')
   const envLabel = useEnvLabel()
 
@@ -89,6 +88,7 @@ export default function FlowerScatter() {
           {
             ...poolControlsSchema(defaults.pool),
             ...weightExtras,
+            'Spawn Zone': folder(spawnZoneControlsSchema(ZONE_DEFAULTS), { collapsed: true }),
           },
           { collapsed: true }
         ),
@@ -102,12 +102,18 @@ export default function FlowerScatter() {
     [controlValues]
   )
 
+  const spawnWidth = controlValues.spawnWidth as number
+  const spawnForward = controlValues.spawnForward as number
+  const spawnBack = controlValues.spawnBack as number
+
   const targetCount = Math.min(
     CAPACITY,
-    Math.floor((controlValues.density as number) * getTileCount(radius))
+    Math.floor((controlValues.density as number) * getTileCountRect(spawnWidth, spawnForward, spawnBack))
   )
 
-  const pool = useScatterPool({
+  const meshesRef = useRef<(InstancedMesh | null)[]>([])
+
+  useScatterPool({
     name: POOL_NAME,
     capacity: CAPACITY,
     targetCount,
@@ -120,6 +126,8 @@ export default function FlowerScatter() {
     meshCount: FLOWER_VARIANTS.length,
     variantCount: FLOWER_VARIANTS.length,
     variantWeights,
+    meshesRef,
+    spawnZone: { width: spawnWidth, forwardDepth: spawnForward, backDepth: spawnBack },
   })
 
   return (
@@ -127,7 +135,7 @@ export default function FlowerScatter() {
       {FLOWER_VARIANTS.map((v, i) => (
         <instancedMesh
           key={v.key}
-          ref={pool.meshRefs[i]}
+          ref={(node) => { meshesRef.current[i] = node }}
           args={[geometry, flowerMaterials[i].material, CAPACITY]}
           customDepthMaterial={flowerMaterials[i].depthMaterial}
           castShadow

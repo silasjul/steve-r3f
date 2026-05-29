@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
   DynamicDrawUsage,
   Euler,
-  InstancedMesh,
   MathUtils,
   Matrix4,
   Object3D,
@@ -13,11 +12,7 @@ import {
   Vector3,
 } from "three";
 import { useScatterWorld } from "./_scatter-context";
-import type {
-  MeshRefCallback,
-  ScatterPoolConfig,
-  ScatterPoolHandle,
-} from "./_scatter-types";
+import type { ScatterPoolConfig } from "./_scatter-types";
 
 // Browsers throttle rAF on blur/visibility change; the resumed frame's delta
 // can be seconds. Clamping avoids ground overshoot + simultaneous mass-recycle.
@@ -121,9 +116,12 @@ function pickWeighted(weights: readonly number[]): number {
   return weights.length - 1;
 }
 
-export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
+export function useScatterPool(config: ScatterPoolConfig): void {
   const { speed, radius, occupancy, getGroundOffsetZ } = useScatterWorld();
   const placementRadius = config.placementRadius ?? radius;
+  const zoneWidth = config.spawnZone?.width;
+  const zoneForward = config.spawnZone?.forwardDepth;
+  const zoneBack = config.spawnZone?.backDepth;
   const meshCount = Math.max(1, config.meshCount);
 
   // Latest props mirrored into refs — assignment happens in useEffect (post
@@ -140,7 +138,6 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
   // never read or written during render so the compiler treats them as inert
   // ref containers (which is what useRef is for).
   const stateRef = useRef<PoolState | null>(null);
-  const meshesRef = useRef<(InstancedMesh | null)[]>([]);
   const countersRef = useRef<Uint32Array | null>(null);
 
   // Reset every slot when the spatial domain changes — without this, growing
@@ -151,7 +148,7 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
       s.initialized.fill(0);
       s.positions.fill(0);
     }
-  }, [placementRadius]);
+  }, [placementRadius, zoneWidth, zoneForward, zoneBack]);
 
   // Optional self-registration as an occupier so other pools can blockedBy us.
   useEffect(() => {
@@ -177,22 +174,6 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
     });
   }, [occupancy, config.name, config.registerAsOccupier]);
 
-  // Stable per-mesh ref callbacks. The useMemo return is itself read-only;
-  // the callbacks route writes through meshesRef (a useRef), which is the
-  // documented mutable container — so React Compiler's immutability rule
-  // doesn't tie this array to downstream `mesh.count = ...` mutations.
-  const meshRefs = useMemo<MeshRefCallback[]>(
-    () =>
-      Array.from(
-        { length: meshCount },
-        (_, k) => (mesh: InstancedMesh | null) => {
-          meshesRef.current[k] = mesh;
-          if (mesh) mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-        },
-      ),
-    [meshCount],
-  );
-
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, MAX_DT);
     const cfg = configRef.current;
@@ -202,7 +183,8 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
       occupancy: occ,
       getGroundOffsetZ: getGz,
     } = worldRef.current;
-    const r = cfg.placementRadius ?? worldR;
+    const zone = cfg.spawnZone ?? null;
+    const r = zone ? 0 : (cfg.placementRadius ?? worldR);
     const variantCount = Math.max(1, cfg.variantCount ?? meshCount);
 
     // Lazy buffer allocation. capacity is constant in every consumer, so this
@@ -216,10 +198,23 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
     }
     const state = stateRef.current;
     const counters = countersRef.current;
-    const meshes = meshesRef.current;
+    const meshes = cfg.meshesRef?.current ?? [];
+
+    // Set DynamicDrawUsage on each mesh the first frame it becomes available.
+    for (let k = 0; k < meshCount; k++) {
+      const m = meshes[k];
+      if (m && m.instanceMatrix.usage !== DynamicDrawUsage) {
+        m.instanceMatrix.setUsage(DynamicDrawUsage);
+      }
+    }
 
     const target = Math.min(cfg.targetCount, cfg.capacity);
     const r2 = r * r;
+    // Zone-mode safety bounds (rect expanded by 4 tiles to absorb cluster drift).
+    const zoneOverflow = 4;
+    const zoneHalfW = zone ? zone.width / 2 + zoneOverflow : 0;
+    const zoneFwdSafe = zone ? zone.forwardDepth + zoneOverflow : 0;
+    const zoneBckSafe = zone ? zone.backDepth + zoneOverflow : 0;
     const { positions, scales, rotations, heights, variants, initialized } =
       state;
     const spawnSign = spd === 0 ? 1 : -Math.sign(spd);
@@ -248,8 +243,7 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
     // Pass 1: advance live slots, despawn those past the trailing edge in the
     // scroll direction. Lateral (x) overflow is tolerated so atomic cluster
     // spawns can extend slightly past the leading edge without immediately
-    // recycling. A generous radial safety net still catches stale state after
-    // a radius shrink.
+    // recycling. A generous safety net catches stale state after a zone shrink.
     const safetyR = r + 4;
     const safetyR2 = safetyR * safetyR;
     const exitMargin = 1.5;
@@ -258,9 +252,16 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
       const x = positions[i * 2];
       const z = positions[i * 2 + 1] + spd * dt;
       let off = false;
-      if (spd > 0) off = z > r + exitMargin;
-      else if (spd < 0) off = z < -r - exitMargin;
-      if (!off && x * x + z * z > safetyR2) off = true;
+      if (zone) {
+        if (spd > 0) off = z > zone.forwardDepth + exitMargin;
+        else if (spd < 0) off = z < -(zone.backDepth + exitMargin);
+        if (!off) off = Math.abs(x) > zone.width / 2 + exitMargin;
+        if (!off) off = Math.abs(x) > zoneHalfW || z > zoneFwdSafe || z < -zoneBckSafe;
+      } else {
+        if (spd > 0) off = z > r + exitMargin;
+        else if (spd < 0) off = z < -r - exitMargin;
+        if (!off) off = x * x + z * z > safetyR2;
+      }
       if (off) initialized[i] = 0;
       else positions[i * 2 + 1] = z;
     }
@@ -335,7 +336,9 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
                   cx = sx + d[0];
                   cz = sz + d[1];
                 }
-                if (cx * cx + cz * cz > safetyR2) continue;
+                if (zone
+                  ? (Math.abs(cx) > zoneHalfW || cz > zoneFwdSafe || cz < -zoneBckSafe)
+                  : (cx * cx + cz * cz > safetyR2)) continue;
                 clustered = true;
                 break;
               }
@@ -344,7 +347,8 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
                 const j = (Math.random() * target) | 0;
                 if (j === i || !initialized[j]) continue;
                 const sz = positions[j * 2 + 1];
-                if (!isInitial && spawnSign * sz < r - 4) continue;
+                const edgeRef = zone ? (spawnSign > 0 ? zone.forwardDepth : zone.backDepth) : r;
+                if (!isInitial && spawnSign * sz < edgeRef - 4) continue;
                 const sx = positions[j * 2];
                 const sh = heights[j];
                 if (verticalSpread > 0) {
@@ -358,18 +362,29 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
                   cx = sx + d[0];
                   cz = sz + d[1];
                 }
-                if (cx * cx + cz * cz > safetyR2) continue;
+                if (zone
+                  ? (Math.abs(cx) > zoneHalfW || cz > zoneFwdSafe || cz < -zoneBckSafe)
+                  : (cx * cx + cz * cz > safetyR2)) continue;
                 clustered = true;
                 break;
               }
             }
           }
           if (!clustered) {
-            // Anchor placement. Initial-fill anchors spread across the disc
-            // so we get many clusters at world load; otherwise drop the
+            // Anchor placement. Initial-fill anchors spread across the spawn
+            // zone so we get many clusters at world load; otherwise drop the
             // anchor on the leading edge so the cluster appears where Steve
             // is walking toward.
-            if (isInitial) {
+            if (zone) {
+              if (isInitial) {
+                cx = (Math.random() * 2 - 1) * (zone.width / 2);
+                cz = Math.random() * (zone.forwardDepth + zone.backDepth) - zone.backDepth;
+              } else {
+                cx = (Math.random() * 2 - 1) * (zone.width / 2);
+                const zEdge = spawnSign > 0 ? zone.forwardDepth : zone.backDepth;
+                cz = spawnSign * (zEdge - Math.random() * edgeBand);
+              }
+            } else if (isInitial) {
               const t = Math.random() * Math.PI * 2;
               const rr = Math.sqrt(Math.random()) * r;
               cx = Math.cos(t) * rr;
@@ -516,5 +531,4 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
     }
   });
 
-  return { meshRefs };
 }

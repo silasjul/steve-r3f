@@ -1,21 +1,21 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useControls, folder } from 'leva'
-import { BufferGeometry, type Material, Mesh, Object3D } from 'three'
-import { MAX_TILE_COUNT, getTileCount } from '@/components/environments/_ground'
-import { poolControlsSchema } from './_use-pool-controls'
+import { BufferGeometry, InstancedMesh, type Material, Mesh, Object3D } from 'three'
+import { getTileCountRect } from '@/components/environments/_ground'
+import { poolControlsSchema, spawnZoneControlsSchema } from './_use-pool-controls'
 import { modelControlsSchema } from './_use-model-controls'
 import { useScatterPool } from './_use-scatter-pool'
-import { useScatterWorld } from './_scatter-context'
 import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
 
 useGLTF.preload('/models/zombie.glb')
 
 const POOL_NAME = 'zombies'
 const MAX_DENSITY = 0.05
-const CAPACITY = Math.max(8, Math.ceil(MAX_TILE_COUNT * MAX_DENSITY))
+const ZONE_DEFAULTS = { width: 20, forwardDepth: 30, backDepth: 20 }
+const CAPACITY = Math.max(8, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 
 interface SubMesh {
   geometry: BufferGeometry
@@ -41,13 +41,20 @@ function useZombieSubMeshes(): SubMesh[] {
 
 export default function ZombieScatter() {
   const subMeshes = useZombieSubMeshes()
-  const { radius } = useScatterWorld()
   const defaults = useScatterDefaults('zombies')
   const envLabel = useEnvLabel()
 
   const pool = useControls(envLabel, {
     Tiles: folder(
-      { Zombies: folder(poolControlsSchema(defaults.pool), { collapsed: true }) },
+      {
+        Zombies: folder(
+          {
+            ...poolControlsSchema(defaults.pool),
+            'Spawn Zone': folder(spawnZoneControlsSchema(ZONE_DEFAULTS), { collapsed: true }),
+          },
+          { collapsed: true }
+        ),
+      },
       { collapsed: true }
     ),
   })
@@ -61,10 +68,12 @@ export default function ZombieScatter() {
 
   const targetCount = Math.min(
     CAPACITY,
-    Math.floor((pool.density as number) * getTileCount(radius))
+    Math.floor((pool.density as number) * getTileCountRect(pool.spawnWidth as number, pool.spawnForward as number, pool.spawnBack as number))
   )
 
-  const handle = useScatterPool({
+  const meshesRef = useRef<(InstancedMesh | null)[]>([])
+
+  useScatterPool({
     name: POOL_NAME,
     capacity: CAPACITY,
     targetCount,
@@ -78,6 +87,8 @@ export default function ZombieScatter() {
     variantCount: 1,
     fanAllMeshes: true,
     selfAvoidFactor: 1.2,
+    meshesRef,
+    spawnZone: { width: pool.spawnWidth as number, forwardDepth: pool.spawnForward as number, backDepth: pool.spawnBack as number },
     model,
   })
 
@@ -86,7 +97,7 @@ export default function ZombieScatter() {
       {subMeshes.map((sm, i) => (
         <instancedMesh
           key={i}
-          ref={handle.meshRefs[i]}
+          ref={(node) => { meshesRef.current[i] = node }}
           args={[sm.geometry, sm.material, CAPACITY]}
           castShadow
           receiveShadow

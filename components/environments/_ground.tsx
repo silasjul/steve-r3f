@@ -23,6 +23,11 @@ export function getTileCount(radius: number): number {
 
 export const MAX_TILE_COUNT = getTileCount(MAX_RADIUS)
 
+/** Approximate tile count for a rectangular spawn zone. */
+export function getTileCountRect(width: number, forwardDepth: number, backDepth: number): number {
+  return Math.ceil(width * (forwardDepth + backDepth))
+}
+
 type Props = {
   material: MeshStandardMaterial
   radius: number

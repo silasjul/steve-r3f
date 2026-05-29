@@ -11,10 +11,9 @@ import {
   type PointLight,
 } from 'three'
 import { PLANE_GEOMETRY, useSharedPixelMaterial } from '@/components/blocks/_block'
-import { MAX_TILE_COUNT, getTileCount } from '@/components/environments/_ground'
-import { poolControlsSchema } from './_use-pool-controls'
+import { getTileCountRect } from '@/components/environments/_ground'
+import { poolControlsSchema, spawnZoneControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
-import { useScatterWorld } from './_scatter-context'
 import {
   useEnvConfig,
   useScatterDefaults,
@@ -26,7 +25,8 @@ useTexture.preload('/textures/glowstone.png')
 
 const POOL_NAME = 'glowstone'
 const MAX_DENSITY = 0.08
-const CAPACITY = Math.max(64, Math.ceil(MAX_TILE_COUNT * MAX_DENSITY))
+const ZONE_DEFAULTS = { width: 80, forwardDepth: 60, backDepth: 60 }
+const CAPACITY = Math.max(64, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 const MAX_LIGHTS = 16
 const FACE_COUNT = 6
 const MAX_FACE_INSTANCES = CAPACITY * FACE_COUNT
@@ -66,7 +66,6 @@ function cellKey(x: number, y: number, z: number): string {
 }
 
 export default function GlowstoneScatter() {
-  const { ceilingRadius } = useScatterWorld()
   const defaults = useScatterDefaults('glowstone')
   const envLabel = useEnvLabel()
   const envConfig = useEnvConfig()
@@ -91,6 +90,7 @@ export default function GlowstoneScatter() {
               step: 1,
               label: 'Hang Depth',
             },
+            'Spawn Zone': folder(spawnZoneControlsSchema(ZONE_DEFAULTS), { collapsed: true }),
           },
           { collapsed: true }
         ),
@@ -148,9 +148,13 @@ export default function GlowstoneScatter() {
     [roofHeight]
   )
 
+  const spawnWidth = controlValues.spawnWidth as number
+  const spawnForward = controlValues.spawnForward as number
+  const spawnBack = controlValues.spawnBack as number
+
   const targetCount = Math.min(
     CAPACITY,
-    Math.floor((controlValues.density as number) * getTileCount(ceilingRadius))
+    Math.floor((controlValues.density as number) * getTileCountRect(spawnWidth, spawnForward, spawnBack))
   )
 
   const lightRefs = useRef<(PointLight | null)[]>([])
@@ -256,7 +260,6 @@ export default function GlowstoneScatter() {
 
   useScatterPool({
     name: POOL_NAME,
-    placementRadius: ceilingRadius,
     capacity: CAPACITY,
     targetCount,
     footprint: controlValues.footprint as number,
@@ -277,6 +280,7 @@ export default function GlowstoneScatter() {
     verticalSpread,
     suppressMeshOutput: true,
     registerAsOccupier: false,
+    spawnZone: { width: spawnWidth, forwardDepth: spawnForward, backDepth: spawnBack },
     model,
     onAfterFrame,
   })

@@ -10,7 +10,7 @@ interface EnvState {
 }
 
 export const useEnvStore = create<EnvState>((set) => ({
-  radius: 28,
+  radius: 25,
   walkSpeed: -1,
   setRadius: (radius) => set({ radius }),
   setWalkSpeed: (walkSpeed) => set({ walkSpeed }),

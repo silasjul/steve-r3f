@@ -1,13 +1,13 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useTexture } from '@react-three/drei'
 import { useControls, folder } from 'leva'
+import { InstancedMesh } from 'three'
 import { PLANE_GEOMETRY, useSharedPixelMaterial } from '@/components/blocks/_block'
-import { MAX_TILE_COUNT, getTileCount } from '@/components/environments/_ground'
-import { poolControlsSchema } from './_use-pool-controls'
+import { getTileCountRect } from '@/components/environments/_ground'
+import { poolControlsSchema, spawnZoneControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
-import { useScatterWorld } from './_scatter-context'
 import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
 
 useTexture.preload('/textures/nether_quartz_ore.png')
@@ -15,12 +15,12 @@ useTexture.preload('/textures/nether_gold_ore.png')
 
 const POOL_NAME = 'netherOres'
 const MAX_DENSITY = 0.25
-const CAPACITY = Math.max(64, Math.ceil(MAX_TILE_COUNT * MAX_DENSITY))
+const ZONE_DEFAULTS = { width: 40, forwardDepth: 25, backDepth: 25 }
+const CAPACITY = Math.max(64, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 
 const FLOOR_GEOMETRY = PLANE_GEOMETRY.clone().rotateX(-Math.PI / 2)
 
 export default function NetherOreScatter() {
-  const { radius } = useScatterWorld()
   const defaults = useScatterDefaults('netherOres')
   const envLabel = useEnvLabel()
 
@@ -35,6 +35,7 @@ export default function NetherOreScatter() {
             ...poolControlsSchema(defaults.pool),
             goldWeight: { value: defaults.goldWeight, min: 0, max: 1, step: 0.01, label: 'Gold Share' },
             cluster: { value: defaults.cluster, min: 0, max: 1, step: 0.01, label: 'Cluster' },
+            'Spawn Zone': folder(spawnZoneControlsSchema(ZONE_DEFAULTS), { collapsed: true }),
           },
           { collapsed: true }
         ),
@@ -62,12 +63,18 @@ export default function NetherOreScatter() {
     []
   )
 
+  const spawnWidth = controlValues.spawnWidth as number
+  const spawnForward = controlValues.spawnForward as number
+  const spawnBack = controlValues.spawnBack as number
+
   const targetCount = Math.min(
     CAPACITY,
-    Math.floor((controlValues.density as number) * getTileCount(radius))
+    Math.floor((controlValues.density as number) * getTileCountRect(spawnWidth, spawnForward, spawnBack))
   )
 
-  const handle = useScatterPool({
+  const meshesRef = useRef<(InstancedMesh | null)[]>([])
+
+  useScatterPool({
     name: POOL_NAME,
     capacity: CAPACITY,
     targetCount,
@@ -83,16 +90,17 @@ export default function NetherOreScatter() {
     selfAvoidFactor: 1.0,
     snapToGrid: true,
     clusterBias: controlValues.cluster as number,
-    // Ore veins read as ~8-tile blobs; batch recycles so a vein appears whole.
     clusterSize: 8,
     registerAsOccupier: true,
+    meshesRef,
+    spawnZone: { width: spawnWidth, forwardDepth: spawnForward, backDepth: spawnBack },
     model,
   })
 
   return (
     <>
       <instancedMesh
-        ref={handle.meshRefs[0]}
+        ref={(node) => { meshesRef.current[0] = node }}
         args={[FLOOR_GEOMETRY, quartzMaterial, CAPACITY]}
         castShadow={false}
         receiveShadow
@@ -100,7 +108,7 @@ export default function NetherOreScatter() {
         dispose={null}
       />
       <instancedMesh
-        ref={handle.meshRefs[1]}
+        ref={(node) => { meshesRef.current[1] = node }}
         args={[FLOOR_GEOMETRY, goldMaterial, CAPACITY]}
         castShadow={false}
         receiveShadow

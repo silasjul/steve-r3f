@@ -14,7 +14,7 @@ export const netherConfig: EnvConfig = {
   scene: {
     bg: "#2d0a00",
     walkCorridorWidth: 2,
-    floorRadius: 28,
+    floorRadius: 25,
     lighting: {
       ambient: 0.6,
       sunInt: 0.0,
@@ -59,9 +59,21 @@ export const netherConfig: EnvConfig = {
       cluster: 0.7,
     },
 
+    netherCeilingQuartz: {
+      pool: {
+        density: 0.06,
+        scaleMin: 1,
+        scaleMax: 1,
+        rotateRandom: false,
+        avoidWalkCorridor: false,
+        footprint: 1.0,
+      },
+      cluster: 0.7,
+    },
+
     glowstone: {
       pool: {
-        density: 0.03,
+        density: 0.04,
         scaleMin: 1,
         scaleMax: 1,
         rotateRandom: false,
@@ -80,7 +92,7 @@ export const netherConfig: EnvConfig = {
 
     zombiePigmen: {
       pool: {
-        density: 0.003,
+        density: 0.01,
         scaleMin: 0.95,
         scaleMax: 1.05,
         rotateRandom: true,

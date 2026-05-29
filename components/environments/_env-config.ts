@@ -117,6 +117,11 @@ export interface NetherOreConfig {
   cluster: number;
 }
 
+export interface NetherCeilingQuartzConfig {
+  pool: PoolControlDefaults;
+  cluster: number;
+}
+
 export interface GlowstoneConfig {
   pool: PoolControlDefaults;
   /** 0..1 — biases spawns into adjacent lumps rather than isolated tiles. */
@@ -151,6 +156,7 @@ export interface ScatterDefaults {
   glowstone?: GlowstoneConfig;
   lava?: LavaConfig;
   netherOres?: NetherOreConfig;
+  netherCeilingQuartz?: NetherCeilingQuartzConfig;
 }
 
 export interface EnvConfig {

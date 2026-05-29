@@ -38,7 +38,7 @@ export default function SceneControls() {
         position={[0, 1.25, 3.75]}
         fov={60}
       />
-      <OrbitControls enabled={orbitEnabled} target={[0, 1.25, 0]} />
+      <OrbitControls enabled={orbitEnabled} target={[0, 1.25, 0]} maxDistance={9} />
     </>
   );
 }

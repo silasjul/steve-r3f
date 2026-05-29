@@ -1,6 +1,16 @@
+import type { RefObject } from "react";
 import type { InstancedMesh } from "three";
 
 export type OccupancyQuery = (x: number, z: number) => boolean;
+
+export interface SpawnZone {
+  /** Left/right extent (X axis), symmetric about center. */
+  width: number;
+  /** How far ahead of Steve instances can exist (positive Z). */
+  forwardDepth: number;
+  /** How far behind Steve before instances are recycled. */
+  backDepth: number;
+}
 
 export interface OccupancyAPI {
   register: (name: string, query: OccupancyQuery) => () => void;
@@ -80,14 +90,22 @@ export interface ScatterPoolConfig {
    *  fill still spawns all slots at once. Pair with clusterBias > 0. Default 0
    *  (legacy per-slot recycle). */
   clusterSize?: number;
-  /** Spawn/recycle disc radius. Defaults to the scatter world's floor radius. */
+  /** Spawn/recycle disc radius. Defaults to the scatter world's floor radius.
+   *  Ignored when {@link spawnZone} is set. */
   placementRadius?: number;
+  /** Rectangular spawn zone. When set, supersedes {@link placementRadius} for
+   *  all despawn, anchor-placement, and cluster-validity checks. */
+  spawnZone?: SpawnZone;
   /** When set, each instance gets an integer Y offset in [-verticalSpread, 0]
    *  added before the model fix-up — used for ceiling formations (glowstone
    *  stalactites). Clustered spawns step from a seed in 26-neighbour space. */
   verticalSpread?: number;
   /** Skip writing instance matrices — consumer renders via onAfterFrame instead. */
   suppressMeshOutput?: boolean;
+  /** Refs to the InstancedMesh elements rendered by the consumer. The hook
+   *  reads these inside useFrame (never during render) to write matrices and
+   *  update counts. Required when suppressMeshOutput is false. */
+  meshesRef?: RefObject<(InstancedMesh | null)[]>;
   /** Optional per-instance offset/rotation/scale fix-up for the source model. */
   model?: ModelTransform;
   /** Read-only frame callback fired at the end of the pool's useFrame. Used by
@@ -107,8 +125,3 @@ export interface ScatterPoolFrameState {
   capacity: number;
 }
 
-export type MeshRefCallback = (mesh: InstancedMesh | null) => void;
-
-export interface ScatterPoolHandle {
-  meshRefs: readonly MeshRefCallback[];
-}

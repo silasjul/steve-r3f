@@ -14,8 +14,8 @@ export const overworldDayConfig: EnvConfig = {
   scene: {
     bg: '#87ceeb',
     walkCorridorWidth: 6,
-    sky: { elev: 45.5, azimuth: 140, turb: 20, rayl: 0.55 },
-    lighting: { ambient: 0.4, sunInt: 1.8, sunColor: '#fff5e0', lightDist: 10 },
+    sky: { elev: 45.5, azimuth: 140, turb: 4, rayl: 2 },
+    lighting: { ambient: 0.35, sunInt: 2.2, sunColor: '#ffe0b0', lightDist: 10 },
     fog: {
       enabled: false,
       mode: 'linear',
@@ -24,7 +24,7 @@ export const overworldDayConfig: EnvConfig = {
       far: 18,
       density: 0.06,
     },
-    bloom: { intensity: 0, threshold: 0.9 },
+    bloom: { intensity: 0.2, threshold: 0.85 },
   },
 
   scatter: {
@@ -35,7 +35,7 @@ export const overworldDayConfig: EnvConfig = {
         scaleMax: 1,
         rotateRandom: false,
         avoidWalkCorridor: true,
-        footprint: 3.0,
+        footprint: 5.0,
       },
       model: { oy: -3, s: 7, scaleMax: 20 },
     },

@@ -1,5 +1,19 @@
 'use client'
 
+export interface SpawnZoneDefaults {
+  width: number
+  forwardDepth: number
+  backDepth: number
+}
+
+export function spawnZoneControlsSchema(defaults: SpawnZoneDefaults) {
+  return {
+    spawnWidth: { value: defaults.width, min: 2, max: 120, step: 1, label: 'Width' },
+    spawnForward: { value: defaults.forwardDepth, min: 2, max: 120, step: 1, label: 'Forward Depth' },
+    spawnBack: { value: defaults.backDepth, min: 2, max: 120, step: 1, label: 'Back Depth' },
+  }
+}
+
 export interface PoolControlDefaults {
   density: number
   scaleMin: number

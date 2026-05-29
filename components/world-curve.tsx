@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useControls, folder } from "leva";
 import { Material, ShaderChunk, Vector3 } from "three";
@@ -124,6 +125,13 @@ export default function WorldCurve() {
       { collapsed: true },
     ),
   });
+
+  useEffect(() => {
+    return () => {
+      uniforms.uCurveX.value = 0;
+      uniforms.uCurveZ.value = 0;
+    };
+  }, []);
 
   useFrame(({ camera }) => {
     if (enabled) {

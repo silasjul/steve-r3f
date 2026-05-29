@@ -8,34 +8,33 @@ import { PLANE_GEOMETRY, useSharedPixelMaterial } from '@/components/blocks/_blo
 import { getTileCountRect } from '@/components/environments/_ground'
 import { poolControlsSchema, spawnZoneControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
-import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
+import { useScatterDefaults, useEnvLabel, useEnvConfig } from '@/components/environments/_env-config'
 
-useTexture.preload('/textures/stone.png')
-useTexture.preload('/textures/coal_ore.png')
+useTexture.preload('/textures/nether_quartz_ore.png')
 
-const POOL_NAME = 'rocks'
+const POOL_NAME = 'netherCeilingQuartz'
 const MAX_DENSITY = 0.25
-const ZONE_DEFAULTS = { width: 20, forwardDepth: 25, backDepth: 15 }
+const ZONE_DEFAULTS = { width: 40, forwardDepth: 25, backDepth: 25 }
 const CAPACITY = Math.max(64, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 
-// Bake the floor rotation into the geometry once so per-instance matrices only
-// need a Y rotation (matching how the scatter pool composes transforms).
-const FLOOR_GEOMETRY = PLANE_GEOMETRY.clone().rotateX(-Math.PI / 2)
+// Face-down plane — visible from below, flush against the ceiling underside.
+const CEILING_GEOMETRY = PLANE_GEOMETRY.clone().rotateX(Math.PI / 2)
 
-export default function RockScatter() {
-  const defaults = useScatterDefaults('rocks')
+export default function NetherCeilingQuartzScatter() {
+  const defaults = useScatterDefaults('netherCeilingQuartz')
   const envLabel = useEnvLabel()
+  const envConfig = useEnvConfig()
+  const roofHeight = envConfig.scene.roof?.height ?? 12
+  const roofTint = envConfig.scene.roof?.tint
 
-  const stoneMaterial = useSharedPixelMaterial('/textures/stone.png')
-  const coalMaterial = useSharedPixelMaterial('/textures/coal_ore.png')
+  const material = useSharedPixelMaterial('/textures/nether_quartz_ore.png', { tint: roofTint })
 
   const controlValues = useControls(envLabel, {
     Tiles: folder(
       {
-        Rocks: folder(
+        CeilingQuartz: folder(
           {
             ...poolControlsSchema(defaults.pool),
-            coalWeight: { value: defaults.coalWeight, min: 0, max: 1, step: 0.01, label: 'Coal Share' },
             cluster: { value: defaults.cluster, min: 0, max: 1, step: 0.01, label: 'Cluster' },
             'Spawn Zone': folder(spawnZoneControlsSchema(ZONE_DEFAULTS), { collapsed: true }),
           },
@@ -46,23 +45,17 @@ export default function RockScatter() {
     ),
   }) as Record<string, number | boolean>
 
-  const coalWeight = controlValues.coalWeight as number
-  const variantWeights = useMemo(
-    () => [1 - coalWeight, coalWeight],
-    [coalWeight]
-  )
-
   const model = useMemo(
     () => ({
       offsetX: 0,
-      offsetY: 0.001,
+      offsetY: roofHeight - 0.001,
       offsetZ: 0,
       rotX: 0,
       rotY: 0,
       rotZ: 0,
       scale: 1,
     }),
-    []
+    [roofHeight]
   )
 
   const spawnWidth = controlValues.spawnWidth as number
@@ -81,42 +74,31 @@ export default function RockScatter() {
     capacity: CAPACITY,
     targetCount,
     footprint: controlValues.footprint as number,
-    blockedBy: ['trees'],
-    avoidWalkCorridor: controlValues.avoidWalkCorridor as boolean,
+    blockedBy: [],
+    avoidWalkCorridor: false,
     scaleMin: controlValues.scaleMin as number,
     scaleMax: controlValues.scaleMax as number,
     rotateRandom: controlValues.rotateRandom as boolean,
-    meshCount: 2,
-    variantCount: 2,
-    variantWeights,
+    meshCount: 1,
+    variantCount: 1,
     selfAvoidFactor: 1.0,
     snapToGrid: true,
     clusterBias: controlValues.cluster as number,
-    clusterSize: 12,
-    registerAsOccupier: true,
+    clusterSize: 8,
+    registerAsOccupier: false,
     meshesRef,
     spawnZone: { width: spawnWidth, forwardDepth: spawnForward, backDepth: spawnBack },
     model,
   })
 
   return (
-    <>
-      <instancedMesh
-        ref={(node) => { meshesRef.current[0] = node }}
-        args={[FLOOR_GEOMETRY, stoneMaterial, CAPACITY]}
-        castShadow={false}
-        receiveShadow
-        frustumCulled={false}
-        dispose={null}
-      />
-      <instancedMesh
-        ref={(node) => { meshesRef.current[1] = node }}
-        args={[FLOOR_GEOMETRY, coalMaterial, CAPACITY]}
-        castShadow={false}
-        receiveShadow
-        frustumCulled={false}
-        dispose={null}
-      />
-    </>
+    <instancedMesh
+      ref={(node) => { meshesRef.current[0] = node }}
+      args={[CEILING_GEOMETRY, material, CAPACITY]}
+      castShadow={false}
+      receiveShadow={false}
+      frustumCulled={false}
+      dispose={null}
+    />
   )
 }

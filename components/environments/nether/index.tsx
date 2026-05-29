@@ -14,6 +14,7 @@ import LavaScatter from "@/components/scatter/lava-scatter";
 import NetherOreScatter from "@/components/scatter/nether-ore-scatter";
 import GlowstoneScatter from "@/components/scatter/glowstone-scatter";
 import ZombiePigmanScatter from "@/components/scatter/zombie-pigman-scatter";
+import NetherCeilingQuartzScatter from "@/components/scatter/nether-ceiling-quartz-scatter";
 import { useEnvStore } from "@/store/env-store";
 
 useTexture.preload("/textures/netherrack.png");
@@ -190,6 +191,7 @@ export default function Nether() {
       >
         <LavaScatter />
         <NetherOreScatter />
+        <NetherCeilingQuartzScatter />
         <ZombiePigmanScatter />
         <GlowstoneScatter />
       </ScatterWorld>
