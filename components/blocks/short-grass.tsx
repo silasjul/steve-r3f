@@ -1,21 +1,17 @@
-'use client'
+"use client";
 
-import { useMemo } from 'react'
-import { DoubleSide, MeshStandardMaterial } from 'three'
-import type { ThreeElements } from '@react-three/fiber'
-import {
-  PLANE_GEOMETRY,
-  getOrCreateMaterial,
-  usePixelTexture,
-} from './_block'
-import { GRASS_TINT } from './grass-block'
+import { useMemo } from "react";
+import { DoubleSide, MeshStandardMaterial } from "three";
+import type { ThreeElements } from "@react-three/fiber";
+import { PLANE_GEOMETRY, getOrCreateMaterial, usePixelTexture } from "./_block";
+import { GRASS_TINT } from "./grass-block";
 
-export default function ShortGrass(props: ThreeElements['group']) {
-  const tex = usePixelTexture('/textures/short_grass.png')
+export default function ShortGrass(props: ThreeElements["group"]) {
+  const tex = usePixelTexture("/textures/short_grass.png");
   const material = useMemo(
     () =>
       getOrCreateMaterial(
-        'short-grass',
+        "short-grass",
         () =>
           new MeshStandardMaterial({
             map: tex,
@@ -23,10 +19,10 @@ export default function ShortGrass(props: ThreeElements['group']) {
             transparent: true,
             alphaTest: 0.5,
             side: DoubleSide,
-          })
+          }),
       ),
-    [tex]
-  )
+    [tex],
+  );
   return (
     <group {...props}>
       <mesh
@@ -42,5 +38,5 @@ export default function ShortGrass(props: ThreeElements['group']) {
         castShadow
       />
     </group>
-  )
+  );
 }

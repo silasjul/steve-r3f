@@ -58,10 +58,10 @@ export default function OverworldDay() {
         bg: { value: C.scene.bg, label: 'Background' },
         Sky: folder(
           {
-            skyElev: { value: C.scene.sky.elev, min: -10, max: 90, step: 0.5, label: 'Elevation' },
-            skyAzimuth: { value: C.scene.sky.azimuth, min: 0, max: 360, step: 1, label: 'Azimuth' },
-            skyTurb: { value: C.scene.sky.turb, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
-            skyRayl: { value: C.scene.sky.rayl, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
+            skyElev: { value: C.scene.sky!.elev, min: -10, max: 90, step: 0.5, label: 'Elevation' },
+            skyAzimuth: { value: C.scene.sky!.azimuth, min: 0, max: 360, step: 1, label: 'Azimuth' },
+            skyTurb: { value: C.scene.sky!.turb, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
+            skyRayl: { value: C.scene.sky!.rayl, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
           },
           { collapsed: true }
         ),
@@ -149,7 +149,8 @@ export default function OverworldDay() {
         shadow-camera-bottom={-15}
         shadow-camera-near={0.5}
         shadow-camera-far={100}
-        shadow-bias={-0.0005}
+        shadow-bias={0.00004}
+        shadow-normalBias={0.01}
       />
 
       <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />

@@ -27,6 +27,10 @@ type Props = {
   material: MeshStandardMaterial
   radius: number
   speed: number
+  /** Y offset for the disc — used by the Nether ceiling. */
+  height?: number
+  /** When true the tiles face downward, turning the disc into a ceiling. */
+  flip?: boolean
 }
 
 /**
@@ -35,7 +39,7 @@ type Props = {
  * origin — invisible because the uniform grid aligns the same way at every
  * integer offset, so no per-instance updates after init.
  */
-export default function Ground({ material, radius, speed }: Props) {
+export default function Ground({ material, radius, speed, height = 0, flip = false }: Props) {
   const groupRef = useRef<Group>(null)
   const meshRef = useRef<InstancedMesh>(null)
 
@@ -58,15 +62,15 @@ export default function Ground({ material, radius, speed }: Props) {
     const group = groupRef.current
     if (!mesh || !group) return
     mesh.count = tiles.length
-    group.position.set(0, 0, 0)
-    tempObject.rotation.set(-Math.PI / 2, 0, 0)
+    group.position.set(0, height, 0)
+    tempObject.rotation.set(flip ? Math.PI / 2 : -Math.PI / 2, 0, 0)
     for (let i = 0; i < tiles.length; i++) {
       tempObject.position.set(tiles[i].x, 0, tiles[i].z)
       tempObject.updateMatrix()
       mesh.setMatrixAt(i, tempObject.matrix)
     }
     mesh.instanceMatrix.needsUpdate = true
-  }, [tiles])
+  }, [tiles, height, flip])
 
   useFrame((_, rawDt) => {
     const group = groupRef.current

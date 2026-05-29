@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { useControls, folder } from 'leva'
-import { DoubleSide, MeshStandardMaterial } from 'three'
+import { DoubleSide, MeshStandardMaterial, type MeshDepthMaterial } from 'three'
 import {
   getOrCreateMaterial,
   usePixelTexture,
@@ -12,7 +12,7 @@ import { getCrossPlaneGeometry } from './_cross-plane-geometry'
 import { poolControlsSchema } from './_use-pool-controls'
 import { useScatterPool } from './_use-scatter-pool'
 import { useScatterWorld } from './_scatter-context'
-import { applyWindShader } from '@/components/wind'
+import { applyWindShader, createWindDepthMaterial } from '@/components/wind'
 import { useScatterDefaults, useEnvLabel } from '@/components/environments/_env-config'
 
 const POOL_NAME = 'flowers'
@@ -28,7 +28,10 @@ const FLOWER_VARIANTS = [
   { key: 'red_tulip', label: 'Red Tulip', texture: '/textures/red_tulip.png' },
 ] as const
 
-function useFlowerMaterial(path: string, key: string): MeshStandardMaterial {
+function useFlowerMaterial(
+  path: string,
+  key: string,
+): { material: MeshStandardMaterial; depthMaterial: MeshDepthMaterial } {
   const tex = usePixelTexture(path)
   return useMemo(() => {
     const m = getOrCreateMaterial(
@@ -42,7 +45,7 @@ function useFlowerMaterial(path: string, key: string): MeshStandardMaterial {
         })
     )
     applyWindShader(m)
-    return m
+    return { material: m, depthMaterial: createWindDepthMaterial(tex) }
   }, [tex, key])
 }
 
@@ -52,7 +55,7 @@ export default function FlowerScatter() {
   const defaults = useScatterDefaults('flowers')
   const envLabel = useEnvLabel()
 
-  const materials = [
+  const flowerMaterials = [
     useFlowerMaterial(FLOWER_VARIANTS[0].texture, FLOWER_VARIANTS[0].key),
     useFlowerMaterial(FLOWER_VARIANTS[1].texture, FLOWER_VARIANTS[1].key),
     useFlowerMaterial(FLOWER_VARIANTS[2].texture, FLOWER_VARIANTS[2].key),
@@ -125,7 +128,8 @@ export default function FlowerScatter() {
         <instancedMesh
           key={v.key}
           ref={pool.meshRefs[i]}
-          args={[geometry, materials[i], CAPACITY]}
+          args={[geometry, flowerMaterials[i].material, CAPACITY]}
+          customDepthMaterial={flowerMaterials[i].depthMaterial}
           castShadow
           receiveShadow
           frustumCulled={false}

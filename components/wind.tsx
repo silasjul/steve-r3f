@@ -2,7 +2,16 @@
 
 import { useFrame } from '@react-three/fiber'
 import { useControls, folder } from 'leva'
-import { MathUtils, Vector2, type Material } from 'three'
+import {
+  DoubleSide,
+  MathUtils,
+  MeshDepthMaterial,
+  RGBADepthPacking,
+  Vector2,
+  type Material,
+  type Texture,
+  type WebGLProgramParametersWithUniforms,
+} from 'three'
 
 // Shared uniforms — every patched material references the same objects, so
 // updating .value here animates them all without re-compiling shaders.
@@ -17,6 +26,77 @@ export const windUniforms = {
 
 const PATCHED = new WeakSet<Material>()
 
+function injectWindVertex(shader: WebGLProgramParametersWithUniforms): void {
+  shader.uniforms.uTime = windUniforms.uTime
+  shader.uniforms.uWindStrength = windUniforms.uWindStrength
+  shader.uniforms.uWindSpeed = windUniforms.uWindSpeed
+  shader.uniforms.uWindFreq = windUniforms.uWindFreq
+  shader.uniforms.uWindDir = windUniforms.uWindDir
+  shader.uniforms.uGust = windUniforms.uGust
+
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      '#include <common>',
+      `#include <common>
+       uniform float uTime;
+       uniform float uWindStrength;
+       uniform float uWindSpeed;
+       uniform float uWindFreq;
+       uniform vec2  uWindDir;
+       uniform float uGust;
+       ${WIND_BEND_HELPER}`,
+    )
+    // Replace project_vertex so we can displace in world space (so all
+    // instances bend together regardless of their per-instance Y rotation),
+    // while still using local position.y as the bend mask (base stays put).
+    // wcBend() is injected globally by world-curve.tsx via ShaderChunk.common
+    // — we call it here so the curve still applies on top of the wind sway.
+    .replace(
+      '#include <project_vertex>',
+      `vec4 mvPosition = vec4(transformed, 1.0);
+       #ifdef USE_BATCHING
+         mvPosition = batchingMatrix * mvPosition;
+       #endif
+       #ifdef USE_INSTANCING
+         mvPosition = instanceMatrix * mvPosition;
+       #endif
+       vec4 _wp = wcWindBend(modelMatrix * mvPosition, position.y);
+       mvPosition = viewMatrix * _wp;
+       gl_Position = projectionMatrix * mvPosition;`,
+    )
+    // worldpos_vertex feeds the `worldPosition` varying used by the shadow
+    // sampler. world-curve.tsx already patches the chunk to apply wcBend on
+    // the rest pose; we override again so it picks up the wind sway too,
+    // otherwise shadow lookups land at the un-swayed position and the blade
+    // appears lit where its shadow should fall.
+    .replace(
+      '#include <worldpos_vertex>',
+      `#if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION ) || NUM_SPOT_LIGHT_COORDS > 0
+       vec4 worldPosition = vec4(transformed, 1.0);
+       #ifdef USE_BATCHING
+         worldPosition = batchingMatrix * worldPosition;
+       #endif
+       #ifdef USE_INSTANCING
+         worldPosition = instanceMatrix * worldPosition;
+       #endif
+       worldPosition = wcWindBend(modelMatrix * worldPosition, position.y);
+       #endif`,
+    )
+}
+
+// Shared helper appended once to ShaderChunk.common so both injections agree.
+// Defined inline here as a string we prepend during patch.
+const WIND_BEND_HELPER = `
+vec4 wcWindBend(vec4 wp, float localY) {
+  float _phase = (wp.x * uWindFreq + wp.z * uWindFreq * 0.7) + uTime * uWindSpeed;
+  float _sway  = sin(_phase) + uGust * sin(_phase * 2.3 + 1.3);
+  float _bend  = max(localY, 0.0) * uWindStrength;
+  wp.x += uWindDir.x * _sway * _bend;
+  wp.z += uWindDir.y * _sway * _bend;
+  return wcBend(wp);
+}
+`
+
 export function applyWindShader(material: Material): void {
   if (PATCHED.has(material)) return
   PATCHED.add(material)
@@ -24,51 +104,29 @@ export function applyWindShader(material: Material): void {
   const prev = material.onBeforeCompile
   material.onBeforeCompile = (shader, renderer) => {
     prev?.call(material, shader, renderer)
-
-    shader.uniforms.uTime = windUniforms.uTime
-    shader.uniforms.uWindStrength = windUniforms.uWindStrength
-    shader.uniforms.uWindSpeed = windUniforms.uWindSpeed
-    shader.uniforms.uWindFreq = windUniforms.uWindFreq
-    shader.uniforms.uWindDir = windUniforms.uWindDir
-    shader.uniforms.uGust = windUniforms.uGust
-
-    shader.vertexShader = shader.vertexShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-         uniform float uTime;
-         uniform float uWindStrength;
-         uniform float uWindSpeed;
-         uniform float uWindFreq;
-         uniform vec2  uWindDir;
-         uniform float uGust;`,
-      )
-      // Replace project_vertex so we can displace in world space (so all
-      // instances bend together regardless of their per-instance Y rotation),
-      // while still using local position.y as the bend mask (base stays put).
-      // wcBend() is injected globally by world-curve.tsx via ShaderChunk.common
-      // — we call it here so the curve still applies on top of the wind sway.
-      .replace(
-        '#include <project_vertex>',
-        `vec4 mvPosition = vec4(transformed, 1.0);
-         #ifdef USE_BATCHING
-           mvPosition = batchingMatrix * mvPosition;
-         #endif
-         #ifdef USE_INSTANCING
-           mvPosition = instanceMatrix * mvPosition;
-         #endif
-         vec4 _wp = modelMatrix * mvPosition;
-         float _phase = (_wp.x * uWindFreq + _wp.z * uWindFreq * 0.7) + uTime * uWindSpeed;
-         float _sway  = sin(_phase) + uGust * sin(_phase * 2.3 + 1.3);
-         float _bend  = max(position.y, 0.0) * uWindStrength;
-         _wp.x += uWindDir.x * _sway * _bend;
-         _wp.z += uWindDir.y * _sway * _bend;
-         _wp = wcBend(_wp);
-         mvPosition = viewMatrix * _wp;
-         gl_Position = projectionMatrix * mvPosition;`,
-      )
+    injectWindVertex(shader)
   }
   material.needsUpdate = true
+}
+
+/**
+ * Depth material matching the wind displacement. Assign to a mesh's
+ * `customDepthMaterial` so the shadow map records the swaying geometry
+ * instead of the rest pose — otherwise the visible blade leans away from
+ * its own shadow and the base appears lit.
+ */
+export function createWindDepthMaterial(
+  map: Texture,
+  alphaTest = 0.5,
+): MeshDepthMaterial {
+  const m = new MeshDepthMaterial({
+    depthPacking: RGBADepthPacking,
+    map,
+    alphaTest,
+    side: DoubleSide,
+  })
+  applyWindShader(m)
+  return m
 }
 
 export function WindClock() {

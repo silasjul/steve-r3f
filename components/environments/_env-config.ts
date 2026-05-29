@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { createContext, useContext } from 'react'
-import type { PoolControlDefaults } from '@/components/scatter/_use-pool-controls'
-import type { ModelControlDefaults } from '@/components/scatter/_use-model-controls'
+import { createContext, useContext } from "react";
+import type { PoolControlDefaults } from "@/components/scatter/_use-pool-controls";
+import type { ModelControlDefaults } from "@/components/scatter/_use-model-controls";
 
 /**
  * Shared default-value shapes for each environment scene.
@@ -15,79 +15,121 @@ import type { ModelControlDefaults } from '@/components/scatter/_use-model-contr
  */
 
 export interface SkyDefaults {
-  elev: number
-  azimuth: number
-  turb: number
-  rayl: number
+  elev: number;
+  azimuth: number;
+  turb: number;
+  rayl: number;
 }
 
 export interface LightingDefaults {
-  ambient: number
-  sunInt: number
-  sunColor: string
-  lightDist: number
+  ambient: number;
+  sunInt: number;
+  sunColor: string;
+  lightDist: number;
 }
 
 export interface FogDefaults {
-  enabled: boolean
-  mode: 'linear' | 'exp2'
-  color: string
-  near: number
-  far: number
-  density: number
+  enabled: boolean;
+  mode: "linear" | "exp2";
+  color: string;
+  near: number;
+  far: number;
+  density: number;
 }
 
 export interface BloomDefaults {
-  intensity: number
-  threshold: number
+  intensity: number;
+  threshold: number;
 }
 
 export interface StarsDefaults {
-  count: number
-  saturation: number
+  count: number;
+  saturation: number;
   /** Optional second layer of brighter, larger stars for size variation. */
   bright?: {
-    count: number
-    factor: number
-  }
+    count: number;
+    factor: number;
+  };
+}
+
+export interface RoofDefaults {
+  /** World Y the ceiling tiles sit at. */
+  height: number;
+  /** Tint applied to the ceiling material — netherrack reused as the texture. */
+  tint: string;
+  /** Horizontal disc radius of the ceiling tile field. */
+  radius: number;
 }
 
 export interface SceneDefaults {
-  bg: string
-  walkCorridorWidth: number
-  sky: SkyDefaults
-  lighting: LightingDefaults
-  fog: FogDefaults
-  bloom: BloomDefaults
+  bg: string;
+  walkCorridorWidth: number;
+  /** Floor disc radius — Nether only; other envs use the global env-store radius. */
+  floorRadius?: number;
+  /** Optional — Nether has no sky. */
+  sky?: SkyDefaults;
+  lighting: LightingDefaults;
+  fog: FogDefaults;
+  bloom: BloomDefaults;
   /** Optional — only night-style scenes need this. */
-  stars?: StarsDefaults
+  stars?: StarsDefaults;
+  /** Optional — only Nether-style scenes have a ceiling. */
+  roof?: RoofDefaults;
 }
 
 export interface PoolWithModel {
-  pool: PoolControlDefaults
-  model: ModelControlDefaults
+  pool: PoolControlDefaults;
+  model: ModelControlDefaults;
 }
 
 export interface FlowerWeights {
-  poppy: number
-  oxeye_daisy: number
-  white_tulip: number
-  orange_tulip: number
-  pink_tulip: number
-  red_tulip: number
+  poppy: number;
+  oxeye_daisy: number;
+  white_tulip: number;
+  orange_tulip: number;
+  pink_tulip: number;
+  red_tulip: number;
 }
 
 export interface FlowerConfig {
-  pool: PoolControlDefaults
-  weights: FlowerWeights
+  pool: PoolControlDefaults;
+  weights: FlowerWeights;
 }
 
 export interface RockConfig {
-  pool: PoolControlDefaults
-  coalWeight: number
+  pool: PoolControlDefaults;
+  coalWeight: number;
   /** 0..1 probability that a rock spawns adjacent to an existing one — higher
    *  values produce tighter Minecraft-style stone/ore patches. */
-  cluster: number
+  cluster: number;
+}
+
+export interface LavaConfig {
+  pool: PoolControlDefaults;
+  /** 0..1 — same semantics as RockConfig.cluster, biases pool-like patches. */
+  cluster: number;
+}
+
+export interface NetherOreConfig {
+  pool: PoolControlDefaults;
+  /** 0..1 share of gold ore vs quartz (the remainder is quartz). */
+  goldWeight: number;
+  cluster: number;
+}
+
+export interface GlowstoneConfig {
+  pool: PoolControlDefaults;
+  /** 0..1 — biases spawns into adjacent lumps rather than isolated tiles. */
+  cluster: number;
+  /** Max integer blocks a formation can hang below the ceiling underside. */
+  verticalSpread: number;
+  /** Per-light controls for the pooled point lights that track nearest tiles. */
+  light: {
+    count: number;
+    intensity: number;
+    distance: number;
+    color: string;
+  };
 }
 
 /**
@@ -96,45 +138,50 @@ export interface RockConfig {
  * throws a clear error if you place it inside an env that didn't configure it.
  */
 export interface ScatterDefaults {
-  trees?: PoolWithModel
-  shortGrass?: { pool: PoolControlDefaults }
-  flowers?: FlowerConfig
-  pigs?: PoolWithModel
-  rocks?: RockConfig
-  creepers?: PoolWithModel
-  endermen?: PoolWithModel
-  zombies?: PoolWithModel
-  chickenJockeys?: PoolWithModel
+  trees?: PoolWithModel;
+  shortGrass?: { pool: PoolControlDefaults };
+  flowers?: FlowerConfig;
+  pigs?: PoolWithModel;
+  rocks?: RockConfig;
+  creepers?: PoolWithModel;
+  endermen?: PoolWithModel;
+  zombies?: PoolWithModel;
+  chickenJockeys?: PoolWithModel;
+  zombiePigmen?: PoolWithModel;
+  glowstone?: GlowstoneConfig;
+  lava?: LavaConfig;
+  netherOres?: NetherOreConfig;
 }
 
 export interface EnvConfig {
   /** Leva folder label for the env's scene-level controls. */
-  label: string
-  scene: SceneDefaults
-  scatter: ScatterDefaults
+  label: string;
+  scene: SceneDefaults;
+  scatter: ScatterDefaults;
 }
 
-const EnvConfigContext = createContext<EnvConfig | null>(null)
+const EnvConfigContext = createContext<EnvConfig | null>(null);
 
-export const EnvConfigProvider = EnvConfigContext.Provider
+export const EnvConfigProvider = EnvConfigContext.Provider;
 
 export function useEnvConfig(): EnvConfig {
-  const ctx = useContext(EnvConfigContext)
-  if (!ctx) throw new Error('useEnvConfig must be used inside <EnvConfigProvider>')
-  return ctx
+  const ctx = useContext(EnvConfigContext);
+  if (!ctx)
+    throw new Error("useEnvConfig must be used inside <EnvConfigProvider>");
+  return ctx;
 }
 
 export function useScatterDefaults<K extends keyof ScatterDefaults>(
-  key: K
+  key: K,
 ): NonNullable<ScatterDefaults[K]> {
-  const cfg = useEnvConfig()
-  const slice = cfg.scatter[key]
+  const cfg = useEnvConfig();
+  const slice = cfg.scatter[key];
   if (!slice) {
     throw new Error(
-      `Env "${cfg.label}" rendered a scatter that needs scatter.${String(key)} config, but none was provided.`
-    )
+      `Env "${cfg.label}" rendered a scatter that needs scatter.${String(key)} config, but none was provided.`,
+    );
   }
-  return slice as NonNullable<ScatterDefaults[K]>
+  return slice as NonNullable<ScatterDefaults[K]>;
 }
 
 /**
@@ -144,5 +191,5 @@ export function useScatterDefaults<K extends keyof ScatterDefaults>(
  * this, switching envs would carry over the other env's slider values.
  */
 export function useEnvLabel(): string {
-  return useEnvConfig().label
+  return useEnvConfig().label;
 }
