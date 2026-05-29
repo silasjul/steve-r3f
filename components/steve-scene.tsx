@@ -31,7 +31,7 @@ export default function SteveScene() {
   return (
     <div className='h-screen w-screen'>
       <Leva hidden={levaHidden} />
-      <Canvas shadows camera={{ position: [0, 0, 5], fov: 60 }} onPointerMissed={cycleWorld}>
+      <Canvas shadows="soft" camera={{ position: [0, 0, 5], fov: 60 }} onPointerMissed={cycleWorld}>
         {showPerf && <StatsGl className="fixed! top-0! left-0! z-50!" />}
         <AnimatedTextureTicker />
         <Environment />

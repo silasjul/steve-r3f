@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import { useControls, folder } from 'leva'
-import { Box3, Group, Mesh } from 'three'
+import { Box3, Group, Mesh, MeshStandardMaterial, NearestFilter, NearestMipmapLinearFilter, Texture } from 'three'
 
 useGLTF.preload('/models/steve.glb')
 
@@ -45,6 +45,19 @@ export default function Steve() {
       if ((obj as Mesh).isMesh) {
         obj.castShadow = true
         obj.receiveShadow = true
+        const mats = Array.isArray((obj as Mesh).material)
+          ? ((obj as Mesh).material as MeshStandardMaterial[])
+          : [(obj as Mesh).material as MeshStandardMaterial]
+        for (const mat of mats) {
+          for (const key of Object.keys(mat) as (keyof MeshStandardMaterial)[]) {
+            const val = mat[key]
+            if (val instanceof Texture) {
+              val.magFilter = NearestFilter
+              val.minFilter = NearestMipmapLinearFilter
+              val.needsUpdate = true
+            }
+          }
+        }
       }
     })
   }, [scene])

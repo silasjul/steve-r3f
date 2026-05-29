@@ -142,15 +142,16 @@ export default function OverworldDay() {
         intensity={sunInt}
         color={sunColor}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[4096, 4096]}
         shadow-camera-left={-15}
         shadow-camera-right={15}
         shadow-camera-top={15}
         shadow-camera-bottom={-15}
         shadow-camera-near={0.5}
         shadow-camera-far={100}
-        shadow-bias={0.00004}
-        shadow-normalBias={0.01}
+        shadow-bias={0.00006}
+        shadow-normalBias={0.05}
+        shadow-radius={1}
       />
 
       <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />

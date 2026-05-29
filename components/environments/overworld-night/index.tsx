@@ -142,7 +142,8 @@ export default function OverworldNight() {
         shadow-camera-near={0.5}
         shadow-camera-far={100}
         shadow-bias={0.00004}
-        shadow-normalBias={0.01}
+        shadow-normalBias={0.05}
+        shadow-radius={4}
       />
       <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
       <Stars radius={100} depth={50} count={starCount} factor={4} saturation={starSaturation} fade />
