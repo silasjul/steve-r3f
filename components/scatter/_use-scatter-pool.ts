@@ -83,6 +83,12 @@ const modelQuat = new Quaternion();
 const modelOffset = new Vector3();
 const modelScaleVec = new Vector3();
 
+// Indices of slots placed into the current cluster — used by atomic-cluster
+// mode so each cluster grows from its own anchor and doesn't chain into the
+// previous batch's blocks. Module-scope; cleared at the start of every spawn
+// pass that uses it.
+const currentClusterIdx: number[] = [];
+
 interface PoolState {
   positions: Float32Array;
   scales: Float32Array;
@@ -216,11 +222,13 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
     const r2 = r * r;
     const { positions, scales, rotations, heights, variants, initialized } =
       state;
-    counters.fill(0);
     const spawnSign = spd === 0 ? 1 : -Math.sign(spd);
     const edgeBand = 1.5;
     const selfAvoidFactor = cfg.selfAvoidFactor ?? 0;
     const fanAll = cfg.fanAllMeshes === true;
+    const clusterBias = cfg.clusterBias ?? 0;
+    const clusterSize = cfg.clusterSize ?? 0;
+    const verticalSpread = cfg.verticalSpread ?? 0;
 
     // Pre-compose the model fix-up matrix once per frame.
     const mdl = cfg.model;
@@ -237,27 +245,61 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
       modelMatrix.compose(modelOffset, modelQuat, modelScaleVec);
     }
 
-    let writeIdx = 0; // only used in fan mode
+    // Pass 1: advance live slots, despawn those past the trailing edge in the
+    // scroll direction. Lateral (x) overflow is tolerated so atomic cluster
+    // spawns can extend slightly past the leading edge without immediately
+    // recycling. A generous radial safety net still catches stale state after
+    // a radius shrink.
+    const safetyR = r + 4;
+    const safetyR2 = safetyR * safetyR;
+    const exitMargin = 1.5;
+    for (let i = 0; i < target; i++) {
+      if (!initialized[i]) continue;
+      const x = positions[i * 2];
+      const z = positions[i * 2 + 1] + spd * dt;
+      let off = false;
+      if (spd > 0) off = z > r + exitMargin;
+      else if (spd < 0) off = z < -r - exitMargin;
+      if (!off && x * x + z * z > safetyR2) off = true;
+      if (off) initialized[i] = 0;
+      else positions[i * 2 + 1] = z;
+    }
+
+    // Atomic-cluster batching: when clusterSize > 0, defer recycle spawns
+    // until enough slots are pending so the next cluster lands intact on the
+    // leading edge instead of dribbling in block-by-block. Initial fill (no
+    // live slots yet) still spawns the whole pool in one frame so the world
+    // load looks identical to before.
+    let pending = 0;
+    for (let i = 0; i < target; i++) if (!initialized[i]) pending++;
+    const alive = target - pending;
+    const isInitial = alive === 0 && pending > 0;
+    const effectiveCluster = Math.min(clusterSize, target);
+    let spawnBudget: number;
+    if (clusterSize <= 0 || isInitial) spawnBudget = pending;
+    else if (pending >= effectiveCluster) spawnBudget = effectiveCluster;
+    else spawnBudget = 0;
+
+    // Pass 2: place pending slots (budget-limited) and emit matrices for every
+    // live slot — fused into one loop so initialized slots written this frame
+    // immediately serve as cluster seeds for later iterations.
+    counters.fill(0);
+    let writeIdx = 0;
+    // Atomic-cluster bookkeeping. The first slot of each cluster places at a
+    // fresh anchor (random in-disc for initial fill, leading-edge band for
+    // recycles). Every subsequent slot grows ONLY from currentClusterIdx so
+    // clusters don't chain into prior batches and stay visually distinct.
+    currentClusterIdx.length = 0;
+    const batchMode = clusterSize > 0;
 
     for (let i = 0; i < target; i++) {
-      let x = positions[i * 2];
-      let z = positions[i * 2 + 1];
-      let y = heights[i];
-      let needSpawn = !initialized[i];
-
-      if (!needSpawn) {
-        z += spd * dt;
-        if (x * x + z * z > r2) needSpawn = true;
-      }
-
-      if (needSpawn) {
-        const isFresh = !initialized[i];
-        // Hide this slot from self-avoid so a recycling instance doesn't
-        // reject every nearby position because of its own outgoing ghost.
-        initialized[i] = 0;
+      if (!initialized[i]) {
+        if (spawnBudget <= 0) continue;
+        const isAnchor = batchMode && currentClusterIdx.length === 0;
         let placed = false;
-        const clusterBias = cfg.clusterBias ?? 0;
-        const verticalSpread = cfg.verticalSpread ?? 0;
+        let placedX = 0;
+        let placedZ = 0;
+        let placedY = 0;
         const triesMax =
           verticalSpread > 0 ? 24 : selfAvoidFactor > 0 ? 16 : 6;
         for (let tries = 0; tries < triesMax; tries++) {
@@ -265,36 +307,69 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
           let cz = 0;
           let cy = 0;
           let clustered = false;
-          if (clusterBias > 0 && Math.random() < clusterBias) {
-            // Pick a random already-placed sibling as a cluster seed and
-            // offset by one tile in a random neighbour direction.
-            for (let a = 0; a < 12; a++) {
-              const j = (Math.random() * target) | 0;
-              if (j === i || !initialized[j]) continue;
-              const sz = positions[j * 2 + 1];
-              // For recycles, restrict seeds to rocks near the leading edge so
-              // adjacent placements don't appear mid-disc.
-              if (!isFresh && spawnSign * sz < r - 4) continue;
-              const sx = positions[j * 2];
-              const sh = heights[j];
-              if (verticalSpread > 0) {
-                const d = CLUSTER_DIRS_3D[(Math.random() * 26) | 0];
-                cx = sx + d[0];
-                cy = sh + d[1];
-                cz = sz + d[2];
-                if (cy > 0 || cy < -verticalSpread) continue;
-              } else {
-                const d = CLUSTER_DIRS[(Math.random() * 8) | 0];
-                cx = sx + d[0];
-                cz = sz + d[1];
+          // Pick a cluster seed. In batch mode, the seed pool is the current
+          // cluster only — guarantees compact patches that don't merge across
+          // batches. In legacy mode (clusterSize=0), seed from any initialized
+          // sibling with the original edge-proximity filter for recycles.
+          const wantCluster = batchMode
+            ? !isAnchor
+            : clusterBias > 0 && Math.random() < clusterBias;
+          if (wantCluster) {
+            if (batchMode) {
+              for (let a = 0; a < 12; a++) {
+                const j =
+                  currentClusterIdx[
+                    (Math.random() * currentClusterIdx.length) | 0
+                  ];
+                const sx = positions[j * 2];
+                const sz = positions[j * 2 + 1];
+                const sh = heights[j];
+                if (verticalSpread > 0) {
+                  const d = CLUSTER_DIRS_3D[(Math.random() * 26) | 0];
+                  cx = sx + d[0];
+                  cy = sh + d[1];
+                  cz = sz + d[2];
+                  if (cy > 0 || cy < -verticalSpread) continue;
+                } else {
+                  const d = CLUSTER_DIRS[(Math.random() * 8) | 0];
+                  cx = sx + d[0];
+                  cz = sz + d[1];
+                }
+                if (cx * cx + cz * cz > safetyR2) continue;
+                clustered = true;
+                break;
               }
-              if (cx * cx + cz * cz > r2) continue;
-              clustered = true;
-              break;
+            } else {
+              for (let a = 0; a < 12; a++) {
+                const j = (Math.random() * target) | 0;
+                if (j === i || !initialized[j]) continue;
+                const sz = positions[j * 2 + 1];
+                if (!isInitial && spawnSign * sz < r - 4) continue;
+                const sx = positions[j * 2];
+                const sh = heights[j];
+                if (verticalSpread > 0) {
+                  const d = CLUSTER_DIRS_3D[(Math.random() * 26) | 0];
+                  cx = sx + d[0];
+                  cy = sh + d[1];
+                  cz = sz + d[2];
+                  if (cy > 0 || cy < -verticalSpread) continue;
+                } else {
+                  const d = CLUSTER_DIRS[(Math.random() * 8) | 0];
+                  cx = sx + d[0];
+                  cz = sz + d[1];
+                }
+                if (cx * cx + cz * cz > safetyR2) continue;
+                clustered = true;
+                break;
+              }
             }
           }
           if (!clustered) {
-            if (isFresh) {
+            // Anchor placement. Initial-fill anchors spread across the disc
+            // so we get many clusters at world load; otherwise drop the
+            // anchor on the leading edge so the cluster appears where Steve
+            // is walking toward.
+            if (isInitial) {
               const t = Math.random() * Math.PI * 2;
               const rr = Math.sqrt(Math.random()) * r;
               cx = Math.cos(t) * rr;
@@ -309,9 +384,6 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
             cy = 0;
           }
           if (cfg.snapToGrid) {
-            // Ground tiles sit at integer + groundOffsetZ — snap to the same
-            // lattice so instances stay seated on tiles after the world has
-            // been scrolling for a while.
             const gz = getGz();
             cx = Math.round(cx);
             cz = Math.round(cz - gz) + gz;
@@ -364,16 +436,16 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
             }
             if (tooClose) continue;
           }
-          x = cx;
-          z = cz;
-          y = cy;
+          placedX = cx;
+          placedZ = cz;
+          placedY = cy;
           placed = true;
           break;
         }
         if (!placed) continue;
-        positions[i * 2] = x;
-        positions[i * 2 + 1] = z;
-        heights[i] = y;
+        positions[i * 2] = placedX;
+        positions[i * 2 + 1] = placedZ;
+        heights[i] = placedY;
         scales[i] =
           cfg.scaleMin +
           Math.random() * Math.max(0, cfg.scaleMax - cfg.scaleMin);
@@ -383,10 +455,21 @@ export function useScatterPool(config: ScatterPoolConfig): ScatterPoolHandle {
             ? pickWeighted(cfg.variantWeights)
             : Math.floor(Math.random() * variantCount);
         initialized[i] = 1;
-      } else {
-        positions[i * 2 + 1] = z;
+        spawnBudget--;
+        if (batchMode) {
+          currentClusterIdx.push(i);
+          if (currentClusterIdx.length >= effectiveCluster) {
+            // Cluster is full — next placement starts a fresh anchor. This is
+            // how initial fill scatters many clusters across the disc rather
+            // than packing everything into one mega-blob.
+            currentClusterIdx.length = 0;
+          }
+        }
       }
 
+      const x = positions[i * 2];
+      const z = positions[i * 2 + 1];
+      const y = heights[i];
       dummy.position.set(x, y, z);
       dummy.rotation.set(0, rotations[i], 0);
       dummy.scale.setScalar(scales[i]);

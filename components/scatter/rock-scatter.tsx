@@ -85,6 +85,9 @@ export default function RockScatter() {
     selfAvoidFactor: 1.0,
     snapToGrid: true,
     clusterBias: controlValues.cluster as number,
+    // Stone+coal patches read as small tile clumps — batch recycles so a fresh
+    // patch lands at the leading edge as one unit instead of trickling in.
+    clusterSize: 12,
     registerAsOccupier: true,
     model,
   })

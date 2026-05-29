@@ -270,6 +270,10 @@ export default function GlowstoneScatter() {
     selfAvoidFactor: 0,
     snapToGrid: true,
     clusterBias: controlValues.cluster as number,
+    // Glowstone formations are mostly stalactite chunks of ~6-10 blocks. Wait
+    // for a full chunk's worth of recycles before placing so each new cluster
+    // appears at the leading edge intact rather than as drifting singletons.
+    clusterSize: 8,
     verticalSpread,
     suppressMeshOutput: true,
     registerAsOccupier: false,

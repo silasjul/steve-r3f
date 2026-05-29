@@ -104,6 +104,9 @@ export default function LavaScatter() {
     selfAvoidFactor: 0,
     snapToGrid: true,
     clusterBias: controlValues.cluster as number,
+    // Lava reads as a pool — release in lake-sized batches so the leading edge
+    // gets coherent pools rather than scattered single tiles.
+    clusterSize: 16,
     registerAsOccupier: true,
     model,
   });

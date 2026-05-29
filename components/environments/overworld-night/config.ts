@@ -16,7 +16,7 @@ export const overworldNightConfig: EnvConfig = {
     walkCorridorWidth: 6,
     sky: { elev: 15.5, azimuth: 238, turb: 0, rayl: 0.07 },
     lighting: {
-      ambient: 0.15 ,
+      ambient: 0.15,
       sunInt: 2.5,
       sunColor: "#8585ce",
       lightDist: 10,
@@ -102,7 +102,7 @@ export const overworldNightConfig: EnvConfig = {
         footprint: 1.0,
       },
       coalWeight: 0.05,
-      cluster: 0.9,
+      cluster: 0.95,
     },
     creepers: {
       pool: {

@@ -74,6 +74,12 @@ export interface ScatterPoolConfig {
    *  ore veins). For recycled instances only sibling seeds near the leading
    *  edge are eligible so new ones don't pop in mid-disc. Default 0. */
   clusterBias?: number;
+  /** If > 0, the pool buffers recycle spawns until at least this many slots
+   *  are pending, then places them all in one frame so a fresh cluster appears
+   *  intact on the leading edge instead of dribbling in block-by-block. Initial
+   *  fill still spawns all slots at once. Pair with clusterBias > 0. Default 0
+   *  (legacy per-slot recycle). */
+  clusterSize?: number;
   /** Spawn/recycle disc radius. Defaults to the scatter world's floor radius. */
   placementRadius?: number;
   /** When set, each instance gets an integer Y offset in [-verticalSpread, 0]

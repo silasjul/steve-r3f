@@ -83,6 +83,8 @@ export default function NetherOreScatter() {
     selfAvoidFactor: 1.0,
     snapToGrid: true,
     clusterBias: controlValues.cluster as number,
+    // Ore veins read as ~8-tile blobs; batch recycles so a vein appears whole.
+    clusterSize: 8,
     registerAsOccupier: true,
     model,
   })
