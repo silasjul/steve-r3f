@@ -34,7 +34,7 @@ export const endConfig: EnvConfig = {
         avoidWalkCorridor: true,
         footprint: 0,
       },
-      model: { oy: 0.267, s: 1.1, scaleMax: 5 },
+      model: { ry: 180,oy: 0.267, s: 1.1, scaleMax: 5 },
     },
 
     obsidianTowers: {

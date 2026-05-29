@@ -39,7 +39,12 @@ function useEndermanSubMeshes(): SubMesh[] {
   }, [scene])
 }
 
-export default function EndermanScatter() {
+interface EndermanScatterProps {
+  /** When true, every enderman's yaw is locked onto Steve at the origin. */
+  faceSteve?: boolean
+}
+
+export default function EndermanScatter({ faceSteve = false }: EndermanScatterProps = {}) {
   const subMeshes = useEndermanSubMeshes()
   const defaults = useScatterDefaults('endermen')
   const envLabel = useEnvLabel()
@@ -83,6 +88,7 @@ export default function EndermanScatter() {
     scaleMin: pool.scaleMin as number,
     scaleMax: pool.scaleMax as number,
     rotateRandom: pool.rotateRandom as boolean,
+    faceOrigin: faceSteve,
     meshCount: subMeshes.length,
     variantCount: 1,
     fanAllMeshes: true,

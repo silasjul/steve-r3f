@@ -101,6 +101,10 @@ export interface ScatterPoolConfig {
   /** Rectangular spawn zone. When set, supersedes {@link placementRadius} for
    *  all despawn, anchor-placement, and cluster-validity checks. */
   spawnZone?: SpawnZone;
+  /** If true, each instance's Y rotation is overridden every frame to face the
+   *  world origin (Steve sits at 0,0,0). Combine with model.rotY to flip the
+   *  facing if the source GLB's forward axis is not +Z. Default false. */
+  faceOrigin?: boolean;
   /** When set, each instance gets an integer Y offset in [-verticalSpread, 0]
    *  added before the model fix-up — used for ceiling formations (glowstone
    *  stalactites). Clustered spawns step from a seed in 26-neighbour space. */

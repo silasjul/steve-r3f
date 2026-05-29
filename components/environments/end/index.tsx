@@ -102,7 +102,7 @@ export default function End() {
 
       <ScatterWorld speed={walkSpeed} radius={radius} walkCorridorWidth={walkCorridorWidth}>
         <ObsidianTowerScatter />
-        <EndermanScatter />
+        <EndermanScatter faceSteve />
       </ScatterWorld>
 
       <EffectComposer>

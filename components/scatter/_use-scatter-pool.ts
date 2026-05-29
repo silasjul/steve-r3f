@@ -494,7 +494,8 @@ export function useScatterPool(config: ScatterPoolConfig): void {
       const z = positions[i * 2 + 1];
       const y = heights[i];
       dummy.position.set(x, y, z);
-      dummy.rotation.set(0, rotations[i], 0);
+      const yaw = cfg.faceOrigin ? Math.atan2(-x, -z) : rotations[i];
+      dummy.rotation.set(0, yaw, 0);
       dummy.scale.setScalar(scales[i]);
       dummy.updateMatrix();
       if (cfg.suppressMeshOutput) continue;

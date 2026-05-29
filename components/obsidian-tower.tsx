@@ -41,11 +41,11 @@ const FACE_DIRS: ReadonlyArray<{
   ox: number
   oz: number
 }> = [
-  { dx: 1, dz: 0, rotY: Math.PI / 2, ox: 0.5, oz: 0 },
-  { dx: -1, dz: 0, rotY: -Math.PI / 2, ox: -0.5, oz: 0 },
-  { dx: 0, dz: 1, rotY: 0, ox: 0, oz: 0.5 },
-  { dx: 0, dz: -1, rotY: Math.PI, ox: 0, oz: -0.5 },
-]
+    { dx: 1, dz: 0, rotY: Math.PI / 2, ox: 0.5, oz: 0 },
+    { dx: -1, dz: 0, rotY: -Math.PI / 2, ox: -0.5, oz: 0 },
+    { dx: 0, dz: 1, rotY: 0, ox: 0, oz: 0.5 },
+    { dx: 0, dz: -1, rotY: Math.PI, ox: 0, oz: -0.5 },
+  ]
 
 // Shared geometry for the glowing crystal that sits atop every tower —
 // rotated, it reads as an end-crystal-style gem.
@@ -141,10 +141,12 @@ const ObsidianTower = forwardRef<Group, Props>(function ObsidianTower(
   }, [matrices])
 
   const crystalRef = useRef<Mesh>(null)
-  useFrame((_, dt) => {
+  useFrame((state, delta) => {
     const c = crystalRef.current
     if (!c) return
-    c.rotation.y += dt * 0.6
+    c.rotation.y += delta * 0.6
+    const baseY = h + 1.1
+    c.position.y = baseY + Math.sin(state.clock.elapsedTime * 2) * 0.3
   })
 
   return (
