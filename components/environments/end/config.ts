@@ -27,7 +27,7 @@ export const endConfig: EnvConfig = {
   scatter: {
     endermen: {
       pool: {
-        density: 0.5,
+        density: 1,
         scaleMin: 0.95,
         scaleMax: 1.05,
         rotateRandom: true,

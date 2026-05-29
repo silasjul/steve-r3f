@@ -14,7 +14,7 @@ useGLTF.preload('/models/enderman.glb')
 
 const POOL_NAME = 'endermen'
 const MAX_DENSITY = 0.03
-const ZONE_DEFAULTS = { width: 40, forwardDepth: 50, backDepth: 50 }
+const ZONE_DEFAULTS = { width: 40, forwardDepth: 40, backDepth: 40 }
 const CAPACITY = Math.max(8, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 
 interface SubMesh {

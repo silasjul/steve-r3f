@@ -14,7 +14,7 @@ import ObsidianTower from '@/components/obsidian-tower'
 useTexture.preload('/textures/obsidian.png')
 
 const POOL_NAME = 'obsidianTowers'
-const ZONE_DEFAULTS = { width: 50, forwardDepth: 100, backDepth: 100 }
+const ZONE_DEFAULTS = { width: 50, forwardDepth: 40, backDepth: 40 }
 
 // Fixed pool of preset tower sizes. Each slot keeps its baked-in geometry as
 // it scrolls and recycles, so the scene shows a stable mix of small/tall
