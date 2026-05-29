@@ -25,7 +25,7 @@ useTexture.preload('/textures/glowstone.png')
 
 const POOL_NAME = 'glowstone'
 const MAX_DENSITY = 0.08
-const ZONE_DEFAULTS = { width: 80, forwardDepth: 60, backDepth: 60 }
+const ZONE_DEFAULTS = { width: 80, forwardDepth: 35, backDepth: 35 }
 const CAPACITY = Math.max(64, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 const MAX_LIGHTS = 16
 const FACE_COUNT = 6
@@ -50,13 +50,13 @@ const FACE_TRANSFORMS: ReadonlyArray<{
   rotY: number
   rotZ: number
 }> = [
-  { ox: 0, oy: 0.5, oz: 0, rotX: -Math.PI / 2, rotY: 0, rotZ: 0 },
-  { ox: 0, oy: -0.5, oz: 0, rotX: Math.PI / 2, rotY: 0, rotZ: 0 },
-  { ox: 0.5, oy: 0, oz: 0, rotX: 0, rotY: Math.PI / 2, rotZ: 0 },
-  { ox: -0.5, oy: 0, oz: 0, rotX: 0, rotY: -Math.PI / 2, rotZ: 0 },
-  { ox: 0, oy: 0, oz: 0.5, rotX: 0, rotY: 0, rotZ: 0 },
-  { ox: 0, oy: 0, oz: -0.5, rotX: 0, rotY: Math.PI, rotZ: 0 },
-]
+    { ox: 0, oy: 0.5, oz: 0, rotX: -Math.PI / 2, rotY: 0, rotZ: 0 },
+    { ox: 0, oy: -0.5, oz: 0, rotX: Math.PI / 2, rotY: 0, rotZ: 0 },
+    { ox: 0.5, oy: 0, oz: 0, rotX: 0, rotY: Math.PI / 2, rotZ: 0 },
+    { ox: -0.5, oy: 0, oz: 0, rotX: 0, rotY: -Math.PI / 2, rotZ: 0 },
+    { ox: 0, oy: 0, oz: 0.5, rotX: 0, rotY: 0, rotZ: 0 },
+    { ox: 0, oy: 0, oz: -0.5, rotX: 0, rotY: Math.PI, rotZ: 0 },
+  ]
 
 const faceDummy = new Object3D()
 const faceEuler = new Euler()
