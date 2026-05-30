@@ -20,7 +20,7 @@ export const endConfig: EnvConfig = {
       far: 180,
       density: 0,
     },
-    bloom: { intensity: 1.2, threshold: 0.2 },
+    bloom: { intensity: 1, threshold: 0.1 },
     vignette: { offset: 0.0, darkness: 0.0 },
     stars: { count: 10000, saturation: 1 },
   },

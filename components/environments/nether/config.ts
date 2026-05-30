@@ -25,7 +25,7 @@ export const netherConfig: EnvConfig = {
       enabled: true,
       mode: "linear",
       color: "#6b1500",
-      near: 10,
+      near: 0,
       far: 80,
       density: 0.06,
     },

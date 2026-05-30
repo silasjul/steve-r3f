@@ -143,8 +143,8 @@ export default function Nether() {
         ),
         Vignette: folder(
           {
-            vignetteOffset: { value: C.scene.vignette.offset, min: 0, max: 1, step: 0.01, label: "Offset" },
-            vignetteDarkness: { value: C.scene.vignette.darkness, min: 0, max: 1, step: 0.01, label: "Darkness" },
+            vignetteOffset: { value: C.scene.vignette!.offset, min: 0, max: 1, step: 0.01, label: "Offset" },
+            vignetteDarkness: { value: C.scene.vignette!.darkness, min: 0, max: 1, step: 0.01, label: "Darkness" },
           },
           { collapsed: true },
         ),

@@ -25,7 +25,7 @@ useTexture.preload('/textures/glowstone.png')
 
 const POOL_NAME = 'glowstone'
 const MAX_DENSITY = 0.08
-const ZONE_DEFAULTS = { width: 80, forwardDepth: 35, backDepth: 35 }
+const ZONE_DEFAULTS = { width: 80, forwardDepth: 40, backDepth: 40 }
 const CAPACITY = Math.max(64, Math.ceil(getTileCountRect(ZONE_DEFAULTS.width, ZONE_DEFAULTS.forwardDepth, ZONE_DEFAULTS.backDepth) * MAX_DENSITY))
 const MAX_LIGHTS = 16
 const FACE_COUNT = 6
