@@ -148,7 +148,7 @@ export default function OverworldDay() {
         shadow-camera-bottom={-15}
         shadow-camera-near={0.5}
         shadow-camera-far={250}
-        shadow-bias={0.00006}
+        shadow-bias={-0.00002}
         shadow-normalBias={0.05}
         shadow-radius={1}
       />

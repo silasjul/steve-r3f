@@ -16,8 +16,8 @@ export const overworldNightConfig: EnvConfig = {
     walkCorridorWidth: 6,
     sky: { elev: 15.5, azimuth: 238, turb: 0, rayl: 0.07 },
     lighting: {
-      ambient: 0.15,
-      sunInt: 2.5,
+      ambient: 0.04,
+      sunInt: 1.35,
       sunColor: "#8585ce",
       lightDist: 10,
     },
@@ -29,7 +29,8 @@ export const overworldNightConfig: EnvConfig = {
       far: 20,
       density: 0.06,
     },
-    bloom: { intensity: 0.1, threshold: 1 },
+    bloom: { intensity: 0.5, threshold: 1 },
+    vignette: { offset: 0, darkness: 0.9 },
     stars: {
       count: 8000,
       saturation: 0,

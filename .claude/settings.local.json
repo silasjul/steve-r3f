@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const p = require\\('postprocessing'\\); console.log\\(Object.keys\\(p\\).filter\\(k => k.includes\\('Effect'\\)\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e \"const {ChromaticAberrationEffect, VignetteEffect, BrightnessContrastEffect, HueSaturationEffect, ToneMappingEffect} = require\\('./node_modules/postprocessing'\\); console.log\\('CA props:', Object.getOwnPropertyNames\\(ChromaticAberrationEffect.prototype\\)\\); console.log\\('Vignette props:', Object.keys\\(new VignetteEffect\\(\\)\\)\\); console.log\\('BC props:', Object.keys\\(new BrightnessContrastEffect\\(\\)\\)\\); console.log\\('HS props:', Object.keys\\(new HueSaturationEffect\\(\\)\\)\\)\")"
     ]
   }
 }

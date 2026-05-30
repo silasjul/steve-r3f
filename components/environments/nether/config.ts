@@ -30,6 +30,7 @@ export const netherConfig: EnvConfig = {
       density: 0.06,
     },
     bloom: { intensity: 1.5, threshold: 0.1 },
+    vignette: { offset: 0, darkness: 0 },
     roof: { height: 12, tint: "#aa3322", radius: 50 },
   },
 

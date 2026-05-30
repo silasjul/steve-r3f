@@ -21,6 +21,7 @@ export const endConfig: EnvConfig = {
       density: 0,
     },
     bloom: { intensity: 1.2, threshold: 0.2 },
+    vignette: { offset: 0.0, darkness: 0.0 },
     stars: { count: 10000, saturation: 1 },
   },
 

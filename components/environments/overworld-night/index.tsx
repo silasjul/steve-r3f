@@ -4,7 +4,7 @@ import { useMemo, useRef } from 'react'
 import { Sky, Stars, useTexture } from '@react-three/drei'
 import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
-import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import Ground from '../_ground'
 import { EnvConfigProvider } from '../_env-config'
 import { overworldNightConfig as C } from './config'
@@ -50,6 +50,7 @@ export default function OverworldNight() {
     ambientInt, sunInt, sunColor, lightDist,
     starCount, starSaturation, brightStarCount, brightStarFactor,
     bloom, bloomThreshold,
+    vignetteOffset, vignetteDarkness,
     walkCorridorWidth,
   } = useControls({
     [C.label]: folder(
@@ -94,6 +95,13 @@ export default function OverworldNight() {
           {
             bloom: { value: C.scene.bloom.intensity, min: 0, max: 3, step: 0.01, label: 'Intensity' },
             bloomThreshold: { value: C.scene.bloom.threshold, min: 0, max: 1, step: 0.01, label: 'Threshold' },
+          },
+          { collapsed: true }
+        ),
+        Vignette: folder(
+          {
+            vignetteOffset: { value: C.scene.vignette.offset, min: 0, max: 1, step: 0.01, label: 'Offset' },
+            vignetteDarkness: { value: C.scene.vignette.darkness, min: 0, max: 1, step: 0.01, label: 'Darkness' },
           },
           { collapsed: true }
         ),
@@ -167,6 +175,7 @@ export default function OverworldNight() {
 
       <EffectComposer>
         <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />
+        <Vignette offset={vignetteOffset} darkness={vignetteDarkness} />
       </EffectComposer>
     </EnvConfigProvider>
   )

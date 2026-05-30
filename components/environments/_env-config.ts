@@ -42,6 +42,12 @@ export interface BloomDefaults {
   threshold: number;
 }
 
+export interface VignetteDefaults {
+  offset: number;
+  darkness: number;
+}
+
+
 export interface StarsDefaults {
   count: number;
   saturation: number;
@@ -71,6 +77,7 @@ export interface SceneDefaults {
   lighting: LightingDefaults;
   fog: FogDefaults;
   bloom: BloomDefaults;
+  vignette?: VignetteDefaults;
   /** Optional — only night-style scenes need this. */
   stars?: StarsDefaults;
   /** Optional — only Nether-style scenes have a ceiling. */

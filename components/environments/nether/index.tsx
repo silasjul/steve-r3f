@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { useTexture } from "@react-three/drei";
 import { DirectionalLight } from "three";
 import { useControls, folder } from "leva";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import Ground, { MAX_RADIUS } from "../_ground";
 import { EnvConfigProvider } from "../_env-config";
 import { netherConfig as C } from "./config";
@@ -43,6 +43,8 @@ export default function Nether() {
     roofRadius,
     bloom,
     bloomThreshold,
+    vignetteOffset,
+    vignetteDarkness,
     walkCorridorWidth,
   } = useControls({
     [C.label]: folder(
@@ -139,6 +141,13 @@ export default function Nether() {
           },
           { collapsed: true },
         ),
+        Vignette: folder(
+          {
+            vignetteOffset: { value: C.scene.vignette.offset, min: 0, max: 1, step: 0.01, label: "Offset" },
+            vignetteDarkness: { value: C.scene.vignette.darkness, min: 0, max: 1, step: 0.01, label: "Darkness" },
+          },
+          { collapsed: true },
+        ),
         Scatter: folder(
           {
             walkCorridorWidth: {
@@ -197,11 +206,8 @@ export default function Nether() {
       </ScatterWorld>
 
       <EffectComposer>
-        <Bloom
-          intensity={bloom}
-          luminanceThreshold={bloomThreshold}
-          mipmapBlur
-        />
+        <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />
+        <Vignette offset={vignetteOffset} darkness={vignetteDarkness} />
       </EffectComposer>
     </EnvConfigProvider>
   );
