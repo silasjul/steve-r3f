@@ -27,7 +27,7 @@ interface SubMesh {
 // only the bright pixels self-illuminate (the black body emits ~nothing), and
 // toneMapped=false keeps the eye pixels above the scene's Bloom threshold so the
 // EffectComposer lights them up. Bump this to make the glow stronger.
-const EYE_GLOW_INTENSITY = 0.6
+const EYE_GLOW_INTENSITY = 0.8
 
 function withGlowingEyes(mat: Material): Material {
   const std = mat as MeshStandardMaterial
