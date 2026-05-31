@@ -38,8 +38,8 @@ interface SteveAnimation {
 }
 
 const STEVE_ANIMATIONS: SteveAnimation[] = [
-  { name: 'regular_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 0 },
-  { name: 'aura_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 0 },
+  { name: 'aura_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 1 },
+  { name: 'regular_walk', timeScale: 0.74, walkSpeed: -1.5, trimFrames: 0 },
   { name: 'buff_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 0 },
   { name: 'feminin_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 0 },
   { name: 'latspread_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 0 },

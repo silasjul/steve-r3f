@@ -1,11 +1,12 @@
 'use client'
 
 import { useMemo, useRef } from 'react'
-import { Sky, useTexture } from '@react-three/drei'
+import { useTexture } from '@react-three/drei'
 import { DirectionalLight, MathUtils, MeshStandardMaterial } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Ground from '../_ground'
+import CurvedSky from '../_curved-sky'
 import { EnvConfigProvider } from '../_env-config'
 import { desertConfig as C } from './config'
 import { getOrCreateMaterial, usePixelTexture } from '@/components/blocks/_block'
@@ -53,6 +54,7 @@ export default function Desert() {
     skyAzimuth,
     skyTurb,
     skyRayl,
+    skyCurve,
     ambientInt,
     sunInt,
     sunColor,
@@ -66,19 +68,20 @@ export default function Desert() {
         bg: { value: C.scene.bg, label: 'Background' },
         Sky: folder(
           {
-            skyElev:   { value: C.scene.sky!.elev,    min: -10, max: 90,  step: 0.5,  label: 'Elevation' },
-            skyAzimuth:{ value: C.scene.sky!.azimuth, min: 0,   max: 360, step: 1,    label: 'Azimuth' },
-            skyTurb:   { value: C.scene.sky!.turb,    min: 0,   max: 20,  step: 0.1,  label: 'Turbidity' },
-            skyRayl:   { value: C.scene.sky!.rayl,    min: 0,   max: 6,   step: 0.01, label: 'Rayleigh' },
+            skyElev: { value: C.scene.sky!.elev, min: -10, max: 90, step: 0.5, label: 'Elevation' },
+            skyAzimuth: { value: C.scene.sky!.azimuth, min: 0, max: 360, step: 1, label: 'Azimuth' },
+            skyTurb: { value: C.scene.sky!.turb, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
+            skyRayl: { value: C.scene.sky!.rayl, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
+            skyCurve: { value: 0.01, min: 0, max: 0.1, step: 0.001, label: 'Sky Curve' },
           },
           { collapsed: true },
         ),
         Lighting: folder(
           {
-            ambientInt: { value: C.scene.lighting.ambient,   min: 0, max: 2,   step: 0.01, label: 'Ambient' },
-            sunInt:     { value: C.scene.lighting.sunInt,    min: 0, max: 5,   step: 0.05, label: 'Sun Intensity' },
-            sunColor:   { value: C.scene.lighting.sunColor,                                label: 'Sun Color' },
-            lightDist:  { value: C.scene.lighting.lightDist, min: 1, max: 200, step: 1,   label: 'Distance' },
+            ambientInt: { value: C.scene.lighting.ambient, min: 0, max: 2, step: 0.01, label: 'Ambient' },
+            sunInt: { value: C.scene.lighting.sunInt, min: 0, max: 5, step: 0.05, label: 'Sun Intensity' },
+            sunColor: { value: C.scene.lighting.sunColor, label: 'Sun Color' },
+            lightDist: { value: C.scene.lighting.lightDist, min: 1, max: 200, step: 1, label: 'Distance' },
           },
           { collapsed: true },
         ),
@@ -90,17 +93,17 @@ export default function Desert() {
               options: { Linear: 'linear', Exponential: 'exp2' },
               label: 'Mode',
             },
-            fogColor:   { value: C.scene.fog.color,   label: 'Color' },
-            fogDensity: { value: C.scene.fog.density,  min: 0, max: 0.2, step: 0.001, label: 'Density (exp2)' },
-            fogNear:    { value: C.scene.fog.near,     min: 0, max: 40,  step: 0.01,  label: 'Near' },
-            fogFar:     { value: C.scene.fog.far,      min: 5, max: 40,  step: 0.01,  label: 'Far' },
+            fogColor: { value: C.scene.fog.color, label: 'Color' },
+            fogDensity: { value: C.scene.fog.density, min: 0, max: 0.2, step: 0.001, label: 'Density (exp2)' },
+            fogNear: { value: C.scene.fog.near, min: 0, max: 40, step: 0.01, label: 'Near' },
+            fogFar: { value: C.scene.fog.far, min: 5, max: 40, step: 0.01, label: 'Far' },
           },
           { collapsed: true },
         ),
         Bloom: folder(
           {
-            bloom:          { value: C.scene.bloom.intensity,  min: 0, max: 3, step: 0.01, label: 'Intensity' },
-            bloomThreshold: { value: C.scene.bloom.threshold,  min: 0, max: 1, step: 0.01, label: 'Threshold' },
+            bloom: { value: C.scene.bloom.intensity, min: 0, max: 3, step: 0.01, label: 'Intensity' },
+            bloomThreshold: { value: C.scene.bloom.threshold, min: 0, max: 1, step: 0.01, label: 'Threshold' },
           },
           { collapsed: true },
         ),
@@ -156,7 +159,14 @@ export default function Desert() {
         shadow-radius={1}
       />
 
-      <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
+      <CurvedSky
+        distance={450000}
+        sunPosition={sunDir}
+        turbidity={skyTurb}
+        rayleigh={skyRayl}
+        refRadius={radius}
+        curve={skyCurve}
+      />
 
       <WindClock />
 

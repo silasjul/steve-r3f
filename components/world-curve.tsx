@@ -12,6 +12,12 @@ const uniforms = {
   uCurveCenter: { value: new Vector3() },
 };
 
+/**
+ * The live curve uniforms, shared so other shaders (e.g. the sky) can bend in
+ * lock-step with the world. Mutated each frame by <WorldCurve>.
+ */
+export { uniforms as curveUniforms };
+
 // Patch Three.js shader chunks + Material prototype once at module load.
 // Any material created/compiled after this runs picks up the curve automatically.
 let installed = false;

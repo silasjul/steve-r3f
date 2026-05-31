@@ -59,7 +59,7 @@ export const desertConfig: EnvConfig = {
 
     dryGrass: {
       short: {
-        density: 0.12,
+        density: 0.13,
         scaleMin: 0.7,
         scaleMax: 1.1,
         rotateRandom: true,
@@ -67,7 +67,7 @@ export const desertConfig: EnvConfig = {
         footprint: 0.3,
       },
       tall: {
-        density: 0.02,
+        density: 0.03,
         scaleMin: 0.8,
         scaleMax: 1.1,
         rotateRandom: true,

@@ -1,11 +1,12 @@
 'use client'
 
 import { useMemo, useRef } from 'react'
-import { Sky, useTexture } from '@react-three/drei'
+import { useTexture } from '@react-three/drei'
 import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Ground from '../_ground'
+import CurvedSky from '../_curved-sky'
 import { EnvConfigProvider } from '../_env-config'
 import { overworldDayConfig as C } from './config'
 import { useGrassTopMaterial } from '@/components/blocks/grass-block'
@@ -44,6 +45,7 @@ export default function OverworldDay() {
     skyAzimuth,
     skyTurb,
     skyRayl,
+    skyCurve,
     ambientInt,
     sunInt,
     sunColor,
@@ -61,6 +63,7 @@ export default function OverworldDay() {
             skyAzimuth: { value: C.scene.sky!.azimuth, min: 0, max: 360, step: 1, label: 'Azimuth' },
             skyTurb: { value: C.scene.sky!.turb, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
             skyRayl: { value: C.scene.sky!.rayl, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
+            skyCurve: { value: 0.01, min: 0, max: 0.1, step: 0.001, label: 'Sky Curve' },
           },
           { collapsed: true }
         ),
@@ -153,7 +156,14 @@ export default function OverworldDay() {
         shadow-radius={1}
       />
 
-      <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
+      <CurvedSky
+        distance={450000}
+        sunPosition={sunDir}
+        turbidity={skyTurb}
+        rayleigh={skyRayl}
+        refRadius={radius}
+        curve={skyCurve}
+      />
 
       <WindClock />
 

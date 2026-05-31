@@ -1,11 +1,12 @@
 'use client'
 
 import { useMemo, useRef } from 'react'
-import { Sky, Stars, useTexture } from '@react-three/drei'
+import { Stars, useTexture } from '@react-three/drei'
 import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import Ground from '../_ground'
+import CurvedSky from '../_curved-sky'
 import { EnvConfigProvider } from '../_env-config'
 import { overworldNightConfig as C } from './config'
 import { useGrassTopMaterial } from '@/components/blocks/grass-block'
@@ -46,7 +47,7 @@ export default function OverworldNight() {
   const {
     bg,
     fogColor, fogNear, fogFar,
-    skyElev, skyAzimuth, skyTurb, skyRayl,
+    skyElev, skyAzimuth, skyTurb, skyRayl, skyCurve,
     ambientInt, sunInt, sunColor, lightDist,
     starCount, starSaturation, brightStarCount, brightStarFactor,
     bloom, bloomThreshold,
@@ -62,6 +63,7 @@ export default function OverworldNight() {
             skyAzimuth: { value: C.scene.sky!.azimuth, min: 0, max: 360, step: 1, label: 'Azimuth' },
             skyTurb: { value: C.scene.sky!.turb, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
             skyRayl: { value: C.scene.sky!.rayl, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
+            skyCurve: { value: 0.01, min: 0, max: 0.1, step: 0.001, label: 'Sky Curve' },
           },
           { collapsed: true }
         ),
@@ -100,8 +102,8 @@ export default function OverworldNight() {
         ),
         Vignette: folder(
           {
-            vignetteOffset: { value: C.scene.vignette.offset, min: 0, max: 1, step: 0.01, label: 'Offset' },
-            vignetteDarkness: { value: C.scene.vignette.darkness, min: 0, max: 1, step: 0.01, label: 'Darkness' },
+            vignetteOffset: { value: C.scene.vignette!.offset, min: 0, max: 1, step: 0.01, label: 'Offset' },
+            vignetteDarkness: { value: C.scene.vignette!.darkness, min: 0, max: 1, step: 0.01, label: 'Darkness' },
           },
           { collapsed: true }
         ),
@@ -142,7 +144,7 @@ export default function OverworldNight() {
         intensity={sunInt}
         color={sunColor}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[4096, 4096]}
         shadow-camera-left={-15}
         shadow-camera-right={15}
         shadow-camera-top={15}
@@ -153,7 +155,14 @@ export default function OverworldNight() {
         shadow-normalBias={0.05}
         shadow-radius={4}
       />
-      <Sky distance={450000} sunPosition={sunDir} turbidity={skyTurb} rayleigh={skyRayl} />
+      <CurvedSky
+        distance={450000}
+        sunPosition={sunDir}
+        turbidity={skyTurb}
+        rayleigh={skyRayl}
+        refRadius={radius}
+        curve={skyCurve}
+      />
       <Stars radius={100} depth={50} count={starCount} factor={4} saturation={starSaturation} fade />
       <Stars radius={120} depth={40} count={brightStarCount} factor={brightStarFactor} saturation={starSaturation} fade />
 

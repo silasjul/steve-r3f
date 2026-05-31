@@ -3,7 +3,7 @@
 import { useMemo, useRef } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useControls, folder } from 'leva'
-import { BufferGeometry, InstancedMesh, type Material, Mesh, Object3D } from 'three'
+import { BufferGeometry, Color, InstancedMesh, type Material, Mesh, MeshStandardMaterial, Object3D } from 'three'
 import { getTileCountRect } from '@/components/environments/_ground'
 import { poolControlsSchema, spawnZoneControlsSchema } from './_use-pool-controls'
 import { modelControlsSchema } from './_use-model-controls'
@@ -22,6 +22,25 @@ interface SubMesh {
   material: Material
 }
 
+// The enderman is a single textured mesh: a near-black body with bright eye
+// pixels baked into the colour map. Reusing that map as an emissiveMap makes
+// only the bright pixels self-illuminate (the black body emits ~nothing), and
+// toneMapped=false keeps the eye pixels above the scene's Bloom threshold so the
+// EffectComposer lights them up. Bump this to make the glow stronger.
+const EYE_GLOW_INTENSITY = 0.6
+
+function withGlowingEyes(mat: Material): Material {
+  const std = mat as MeshStandardMaterial
+  if (!std.isMeshStandardMaterial || !std.map) return mat
+  const out = std.clone()
+  out.emissiveMap = std.map
+  out.emissive = new Color(0xffffff)
+  out.emissiveIntensity = EYE_GLOW_INTENSITY
+  out.toneMapped = false
+  out.needsUpdate = true
+  return out
+}
+
 function useEndermanSubMeshes(): SubMesh[] {
   const { scene } = useGLTF('/models/enderman.glb')
   return useMemo(() => {
@@ -33,7 +52,7 @@ function useEndermanSubMeshes(): SubMesh[] {
       const geom = m.geometry.clone()
       geom.applyMatrix4(m.matrixWorld)
       const mat = Array.isArray(m.material) ? m.material[0] : m.material
-      out.push({ geometry: geom, material: mat })
+      out.push({ geometry: geom, material: withGlowingEyes(mat) })
     })
     return out
   }, [scene])
