@@ -67,7 +67,17 @@ export function ScatterWorld({
           producersRef.current.delete(name);
         };
       },
-      isBlocked(x, _z, blockedBy, avoidWalkCorridor, walkCorridorClearance) {
+      isBlocked(
+        x,
+        _z,
+        blockedBy,
+        avoidWalkCorridor,
+        walkCorridorClearance,
+        queryRadius,
+      ) {
+        // Corridor clearance is an explicit per-pool knob, so it is NOT widened
+        // by queryRadius (that would double-count for pools like temples whose
+        // clearance is already tuned to their half-width).
         if (
           avoidWalkCorridor &&
           Math.abs(x) <= corridorHalfRef.current + (walkCorridorClearance ?? 0)
@@ -77,7 +87,7 @@ export function ScatterWorld({
         const map = producersRef.current;
         for (const name of blockedBy) {
           const q = map.get(name);
-          if (q && q(x, _z)) return true;
+          if (q && q(x, _z, queryRadius ?? 0)) return true;
         }
         return false;
       },

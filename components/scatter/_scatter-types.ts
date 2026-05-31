@@ -1,7 +1,14 @@
 import type { RefObject } from "react";
 import type { InstancedMesh } from "three";
 
-export type OccupancyQuery = (x: number, z: number) => boolean;
+export type OccupancyQuery = (
+  x: number,
+  z: number,
+  /** Half-extent of the *querying* object — the occupier expands its own
+   *  blocked area by this so two finite-size objects can't overlap, not just
+   *  their center points. */
+  queryRadius: number,
+) => boolean;
 
 export interface SpawnZone {
   /** Left/right extent (X axis), symmetric about center. */
@@ -20,6 +27,9 @@ export interface OccupancyAPI {
     blockedBy: readonly string[],
     avoidWalkCorridor: boolean,
     walkCorridorClearance?: number,
+    /** Half-extent of the object being placed; forwarded to each occupier
+     *  query so its blocked area grows by this amount. Default 0. */
+    queryRadius?: number,
   ) => boolean;
 }
 
@@ -78,6 +88,12 @@ export interface ScatterPoolConfig {
   /** If true, the pool registers itself with ScatterWorld occupancy under
    *  `name` so other pools can list us in `blockedBy`. Default false. */
   registerAsOccupier?: boolean;
+  /** If true, this occupier blocks a SQUARE area of half-extent
+   *  `footprint * scale * 0.5` rather than an inscribed circle — use for
+   *  rectangular structures (e.g. temples) so grass doesn't poke through the
+   *  corners a circle leaves uncovered. Has no effect unless
+   *  registerAsOccupier is set. Default false. */
+  squareFootprint?: boolean;
   /** If true, candidate (x, z) positions are rounded to integers at placement
    *  time so instances align with the ground's 1×1 tile grid. Per-frame z drift
    *  matches the ground group's scroll, so alignment is preserved continuously.
@@ -101,6 +117,11 @@ export interface ScatterPoolConfig {
   /** Rectangular spawn zone. When set, supersedes {@link placementRadius} for
    *  all despawn, anchor-placement, and cluster-validity checks. */
   spawnZone?: SpawnZone;
+  /** Per-variant mesh index lists. When set, overrides fanAllMeshes and variant
+   *  mode: each slot's variant v writes the instance matrix to every mesh index
+   *  listed in meshGroups[v]. Enables mixed groups (e.g. cactus body + flower)
+   *  where some variants include extra meshes that others don't. */
+  meshGroups?: readonly (readonly number[])[]
   /** If true, each instance's Y rotation is overridden every frame to face the
    *  world origin (Steve sits at 0,0,0). Combine with model.rotY to flip the
    *  facing if the source GLB's forward axis is not +Z. Default false. */

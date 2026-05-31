@@ -89,6 +89,18 @@ export interface PoolWithModel {
   model: ModelControlDefaults;
 }
 
+export interface TempleConfig extends PoolWithModel {
+  /** Extra world-unit padding added to the corridor half-width when avoiding
+   *  the walk path. Temples are huge, so their center must sit roughly half a
+   *  footprint plus this clearance away from the corridor or the building
+   *  overhangs Steve's path. */
+  corridorClearance: number;
+  /** Minimum center-to-center spacing between temples, as a multiple of
+   *  footprint (selfAvoidFactor). Larger = bigger gaps so two temples never
+   *  crowd together. */
+  gap: number;
+}
+
 export interface FlowerWeights {
   poppy: number;
   oxeye_daisy: number;
@@ -127,6 +139,11 @@ export interface NetherOreConfig {
 export interface NetherCeilingQuartzConfig {
   pool: PoolControlDefaults;
   cluster: number;
+}
+
+export interface DryGrassConfig {
+  short: PoolControlDefaults
+  tall: PoolControlDefaults
 }
 
 export interface ObsidianTowerConfig {
@@ -170,6 +187,12 @@ export interface ScatterDefaults {
   netherOres?: NetherOreConfig;
   netherCeilingQuartz?: NetherCeilingQuartzConfig;
   obsidianTowers?: ObsidianTowerConfig;
+  temples?: TempleConfig;
+  cacti?: { pool: PoolControlDefaults };
+  dryGrass?: DryGrassConfig;
+  deadBushes?: { pool: PoolControlDefaults };
+  wanderingTraders?: PoolWithModel;
+  camels?: PoolWithModel;
 }
 
 export interface EnvConfig {

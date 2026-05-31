@@ -27,8 +27,16 @@ export interface PoolControlDefaults {
  * Common per-pool leva schema. `density` is plants-per-tile — the pool's
  * effective count = floor(density * tileCount(radius)) so it scales with the
  * ground disc. Caller wraps in folder() and merges pool-specific extras.
+ *
+ * `opts.footprintMax` raises the footprint slider's ceiling for large objects
+ * (e.g. temples) whose no-spawn / spacing zone is far wider than the 4-unit
+ * default used by plants. Leva clamps the value to the slider max, so this MUST
+ * be at least the configured footprint or it will be silently truncated.
  */
-export function poolControlsSchema(defaults: PoolControlDefaults) {
+export function poolControlsSchema(
+  defaults: PoolControlDefaults,
+  opts?: { footprintMax?: number },
+) {
   return {
     density: {
       value: defaults.density,
@@ -41,6 +49,6 @@ export function poolControlsSchema(defaults: PoolControlDefaults) {
     scaleMax: { value: defaults.scaleMax, min: 0.05, max: 3, step: 0.01, label: 'Scale Max' },
     rotateRandom: { value: defaults.rotateRandom, label: 'Random Rotation' },
     avoidWalkCorridor: { value: defaults.avoidWalkCorridor, label: 'Avoid Corridor' },
-    footprint: { value: defaults.footprint, min: 0, max: 4, step: 0.05, label: 'Footprint' },
+    footprint: { value: defaults.footprint, min: 0, max: opts?.footprintMax ?? 4, step: 0.05, label: 'Footprint' },
   }
 }

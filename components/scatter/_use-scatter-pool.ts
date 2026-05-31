@@ -153,21 +153,35 @@ export function useScatterPool(config: ScatterPoolConfig): void {
   // Optional self-registration as an occupier so other pools can blockedBy us.
   useEffect(() => {
     if (!config.registerAsOccupier) return;
-    return occupancy.register(config.name, (qx, qz) => {
+    return occupancy.register(config.name, (qx, qz, queryRadius) => {
       const s = stateRef.current;
       if (!s) return false;
       const cfg = configRef.current;
-      const square = cfg.snapToGrid === true;
+      const square = cfg.snapToGrid === true || cfg.squareFootprint === true;
       for (let i = 0; i < cfg.capacity; i++) {
         if (!s.initialized[i]) continue;
         const dx = s.positions[i * 2] - qx;
         const dz = s.positions[i * 2 + 1] - qz;
-        const r = cfg.footprint * s.scales[i] * 0.5;
+        // Expand the occupier's own half-extent by the querying object's so two
+        // finite-size things can't overlap (not just their centers).
+        const r = cfg.footprint * s.scales[i] * 0.5 + queryRadius;
         // Grid-snapped occupiers (eg. unit-tile rocks) block a square area so
         // the footprint slider matches the visible tile extent rather than an
         // inscribed circle that leaves tile corners unblocked.
         if (square) {
-          if (Math.abs(dx) < r && Math.abs(dz) < r) return true;
+          // Rotate the delta into the instance's local frame (by -yaw) so the
+          // no-spawn box turns with a yaw-rotated structure instead of staying
+          // axis-aligned and leaking spawns into the swung-out corners.
+          const rot = s.rotations[i];
+          let lx = dx;
+          let lz = dz;
+          if (rot !== 0) {
+            const c = Math.cos(rot);
+            const sn = Math.sin(rot);
+            lx = c * dx - sn * dz;
+            lz = sn * dx + c * dz;
+          }
+          if (Math.abs(lx) < r && Math.abs(lz) < r) return true;
         } else if (dx * dx + dz * dz < r * r) return true;
       }
       return false;
@@ -410,6 +424,7 @@ export function useScatterPool(config: ScatterPoolConfig): void {
               cfg.blockedBy,
               cfg.avoidWalkCorridor,
               cfg.walkCorridorClearance,
+              cfg.footprint * 0.5,
             )
           )
             continue;
@@ -504,7 +519,20 @@ export function useScatterPool(config: ScatterPoolConfig): void {
         ? finalMatrix.multiplyMatrices(dummy.matrix, modelMatrix)
         : dummy.matrix;
 
-      if (fanAll) {
+      const mg = cfg.meshGroups;
+      if (mg) {
+        const idxs = mg[variants[i]];
+        if (idxs) {
+          for (let gi = 0; gi < idxs.length; gi++) {
+            const k = idxs[gi];
+            const mesh = meshes[k];
+            if (mesh) {
+              mesh.setMatrixAt(counters[k], outMatrix);
+              counters[k]++;
+            }
+          }
+        }
+      } else if (fanAll) {
         for (let k = 0; k < meshCount; k++) {
           const mesh = meshes[k];
           if (mesh) mesh.setMatrixAt(writeIdx, outMatrix);
