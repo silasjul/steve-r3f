@@ -14,7 +14,7 @@ export const overworldNightConfig: EnvConfig = {
   scene: {
     bg: "#050510",
     walkCorridorWidth: 6,
-    sky: { elev: 15.5, azimuth: 238, turb: 0, rayl: 0.07 },
+    sky: { elev: 24.5, azimuth: 238, turb: 0, rayl: 0.07 },
     lighting: {
       ambient: 0.04,
       sunInt: 1.35,
