@@ -40,12 +40,12 @@ interface SteveAnimation {
 const STEVE_ANIMATIONS: SteveAnimation[] = [
   { name: 'aura_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 1 },
   { name: 'regular_walk', timeScale: 0.74, walkSpeed: -1.5, trimFrames: 0 },
-  { name: 'buff_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 0 },
-  { name: 'feminin_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 0 },
-  { name: 'latspread_walk', timeScale: 0.85, walkSpeed: -1, trimFrames: 0 },
-  { name: 'armswing_dance', timeScale: 0.85, walkSpeed: 0, trimFrames: 0 },
+  { name: 'buff_walk', timeScale: 0.85, walkSpeed: -1.15, trimFrames: 0 },
+  { name: 'feminin_walk', timeScale: 1.16, walkSpeed: -1.7, trimFrames: 0 },
+  { name: 'latspread_walk', timeScale: 0.85, walkSpeed: -1.6, trimFrames: 0 },
+  { name: 'armswing_dance', timeScale: 0.85, walkSpeed: -0.4, trimFrames: 0 },
   { name: 'getting_freaky', timeScale: 0.85, walkSpeed: 0, trimFrames: 0 },
-  { name: 'hip_hop_shit', timeScale: 0.85, walkSpeed: 0, trimFrames: 0 },
+  { name: 'hip_hop_shit', timeScale: 0.85, walkSpeed: -0.4, trimFrames: 0 },
 ]
 
 const DEFAULT_ANIM: Omit<SteveAnimation, 'name'> = {

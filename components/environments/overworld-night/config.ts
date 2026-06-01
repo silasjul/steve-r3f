@@ -16,10 +16,12 @@ export const overworldNightConfig: EnvConfig = {
     walkCorridorWidth: 6,
     sky: { elev: 24.5, azimuth: 238, turb: 0, rayl: 0.07 },
     lighting: {
-      ambient: 0.04,
-      sunInt: 1.35,
+      ambient: 0.07,
+      sunInt: 2.2,
       sunColor: "#8585ce",
-      lightDist: 10,
+      // Only moves the shadow camera; directional shading is distance-invariant.
+      // High so the shadow cam clears the 7-unit-tall trees (see Day config).
+      lightDist: 50,
     },
     fog: {
       enabled: true,

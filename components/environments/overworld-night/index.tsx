@@ -146,6 +146,12 @@ export default function OverworldNight() {
       <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
 
       <ambientLight intensity={ambientInt} />
+      {/*
+        See Overworld Day for the rationale. Far is a touch larger here because
+        the low moon (elev ~24°) throws longer shadows that reach deeper. Bias
+        flipped from +0.00004 (which peter-panned shadows off their bases) to a
+        small negative, matching Day; normalBias does the acne suppression.
+      */}
       <directionalLight
         ref={sunRef}
         position={[lightDir[0] * lightDist, lightDir[1] * lightDist, lightDir[2] * lightDist]}
@@ -153,13 +159,13 @@ export default function OverworldNight() {
         color={sunColor}
         castShadow
         shadow-mapSize={[4096, 4096]}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
-        shadow-camera-near={0.5}
-        shadow-camera-far={100}
-        shadow-bias={0.00004}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
+        shadow-camera-near={5}
+        shadow-camera-far={180}
+        shadow-bias={-0.00002}
         shadow-normalBias={0.05}
         shadow-radius={4}
       />

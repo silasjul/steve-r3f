@@ -15,7 +15,11 @@ export const overworldDayConfig: EnvConfig = {
     bg: '#87ceeb',
     walkCorridorWidth: 6,
     sky: { elev: 47.0, azimuth: 138, turb: 0.0, rayl: 1.23 },
-    lighting: { ambient: 0.35, sunInt: 2.2, sunColor: '#ffe0b0', lightDist: 10 },
+    // lightDist only moves the shadow camera (the light is directional, so its
+    // normalized direction — and thus all shading — is unchanged by distance).
+    // Kept high so the shadow cam sits well above the 7-unit-tall trees instead
+    // of level with their tops, which was clipping their shadows out.
+    lighting: { ambient: 0.35, sunInt: 2.2, sunColor: '#ffe0b0', lightDist: 50 },
     fog: {
       enabled: false,
       mode: 'linear',

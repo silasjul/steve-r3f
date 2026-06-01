@@ -146,6 +146,13 @@ export default function OverworldDay() {
         ))}
 
       <ambientLight intensity={ambientInt} />
+      {/*
+        Box widened from ±15 so trees (which spawn up to ~45 units out and get
+        dropped by the world curve) enter the shadow frustum before they're on
+        top of the player. near/far retightened around where the lifted camera
+        (lightDist, raised in config so the shadow cam clears the 7-unit-tall
+        trees instead of sitting level with their tops) now sits.
+      */}
       <directionalLight
         ref={sunRef}
         position={[lightDir[0] * lightDist, lightDir[1] * lightDist, lightDir[2] * lightDist]}
@@ -153,15 +160,15 @@ export default function OverworldDay() {
         color={sunColor}
         castShadow
         shadow-mapSize={[4096, 4096]}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
-        shadow-camera-near={0.5}
-        shadow-camera-far={250}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
+        shadow-camera-near={5}
+        shadow-camera-far={160}
         shadow-bias={-0.00002}
         shadow-normalBias={0.05}
-        shadow-radius={1}
+        shadow-radius={3}
       />
 
       <CurvedSky
