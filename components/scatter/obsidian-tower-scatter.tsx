@@ -145,6 +145,7 @@ export default function ObsidianTowerScatter() {
           glowColor={glow.towerGlowColor as string}
           glowIntensity={glow.towerGlowIntensity as number}
           glowDistance={glow.towerGlowDistance as number}
+          healBeam
         />
       ))}
     </>

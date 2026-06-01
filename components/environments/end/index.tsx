@@ -12,6 +12,7 @@ import { useSharedPixelMaterial } from '@/components/blocks/_block'
 import { ScatterWorld } from '@/components/scatter/_scatter-context'
 import EndermanScatter from '@/components/scatter/enderman-scatter'
 import ObsidianTowerScatter from '@/components/scatter/obsidian-tower-scatter'
+import EnderDragon from '@/components/ender-dragon'
 import { useEnvStore } from '@/store/env-store'
 
 useTexture.preload('/textures/end_stone.png')
@@ -112,6 +113,8 @@ export default function End() {
         <ObsidianTowerScatter />
         <EndermanScatter faceSteve />
       </ScatterWorld>
+
+      <EnderDragon />
 
       <EffectComposer>
         <Bloom intensity={bloom} luminanceThreshold={bloomThreshold} mipmapBlur />

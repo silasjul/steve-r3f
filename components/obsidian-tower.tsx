@@ -14,6 +14,7 @@ import {
   OctahedronGeometry,
 } from 'three'
 import { PLANE_GEOMETRY, useSharedPixelMaterial } from './blocks/_block'
+import CrystalBeam from './crystal-beam'
 
 useTexture.preload('/textures/obsidian.png')
 
@@ -27,6 +28,8 @@ interface Props {
   glowColor?: string
   glowIntensity?: number
   glowDistance?: number
+  /** Render an end-crystal → ender-dragon healing beam from the top crystal. */
+  healBeam?: boolean
 }
 
 const scratchObj = new Object3D()
@@ -106,6 +109,7 @@ const ObsidianTower = forwardRef<Group, Props>(function ObsidianTower(
     glowColor = '#ff7733',
     glowIntensity = 14,
     glowDistance = 22,
+    healBeam = false,
   },
   ref,
 ) {
@@ -178,6 +182,7 @@ const ObsidianTower = forwardRef<Group, Props>(function ObsidianTower(
         decay={2}
         castShadow={false}
       />
+      {healBeam && <CrystalBeam anchorY={h + 1.1} crystalColor={glowColor} />}
     </group>
   )
 })
