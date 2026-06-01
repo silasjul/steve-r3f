@@ -6,7 +6,8 @@ import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Ground from '../_ground'
-import CurvedSky from '../_curved-sky'
+import CurvedSky, { curveSunDir } from '../_curved-sky'
+import Clouds from '../_clouds'
 import { EnvConfigProvider } from '../_env-config'
 import { overworldDayConfig as C } from './config'
 import { useGrassTopMaterial } from '@/components/blocks/grass-block'
@@ -18,6 +19,7 @@ import PigScatter from '@/components/scatter/pig-scatter'
 import { useEnvStore } from '@/store/env-store'
 import { WindClock, useWindControls } from '@/components/wind'
 
+useTexture.preload('/textures/clouds.png')
 useTexture.preload('/textures/grass_block_top.png')
 useTexture.preload('/textures/short_grass.png')
 useTexture.preload('/textures/poppy.png')
@@ -63,7 +65,7 @@ export default function OverworldDay() {
             skyAzimuth: { value: C.scene.sky!.azimuth, min: 0, max: 360, step: 1, label: 'Azimuth' },
             skyTurb: { value: C.scene.sky!.turb, min: 0, max: 20, step: 0.1, label: 'Turbidity' },
             skyRayl: { value: C.scene.sky!.rayl, min: 0, max: 6, step: 0.01, label: 'Rayleigh' },
-            skyCurve: { value: 0.01, min: 0, max: 0.1, step: 0.001, label: 'Sky Curve' },
+            skyCurve: { value: 0.03, min: 0, max: 0.1, step: 0.001, label: 'Sky Curve' },
           },
           { collapsed: true }
         ),
@@ -127,6 +129,12 @@ export default function OverworldDay() {
     ]
   }, [skyElev, skyAzimuth])
 
+  // Light direction bent to match where the sun visually sits in the curved sky.
+  const lightDir = useMemo(
+    () => curveSunDir(sunDir, radius, skyCurve),
+    [sunDir, radius, skyCurve],
+  )
+
   return (
     <EnvConfigProvider value={C}>
       <color attach="background" args={[bg]} />
@@ -140,7 +148,7 @@ export default function OverworldDay() {
       <ambientLight intensity={ambientInt} />
       <directionalLight
         ref={sunRef}
-        position={[sunDir[0] * lightDist, sunDir[1] * lightDist, sunDir[2] * lightDist]}
+        position={[lightDir[0] * lightDist, lightDir[1] * lightDist, lightDir[2] * lightDist]}
         intensity={sunInt}
         color={sunColor}
         castShadow
@@ -168,6 +176,7 @@ export default function OverworldDay() {
       <WindClock />
 
       <Ground material={material} radius={radius} speed={walkSpeed} />
+      <Clouds speed={walkSpeed} />
 
       <ScatterWorld speed={walkSpeed} radius={radius} walkCorridorWidth={walkCorridorWidth}>
         <TreeScatter />

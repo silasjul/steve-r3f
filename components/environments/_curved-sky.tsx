@@ -60,6 +60,36 @@ function patchSkyMaterial(mat: ShaderMaterial) {
   mat.needsUpdate = true
 }
 
+/**
+ * Bend a sun direction by the same World Curve the sky applies, so a directional
+ * light lines up with where the sun *visually* sits in the curved sky.
+ *
+ * The sky shader tilts the sampled view direction UP near the horizon
+ * (`cp.y + drop`), which makes the sun disc render LOWER on screen than its raw
+ * `sunPosition`. To match, we tilt the light direction DOWN by the same amount —
+ * mirroring the fragment-shader maths (`drop = curve * (|cp.x|^p + |cp.z|^p)`,
+ * `cp = dir * refRadius`) back in unit-direction space.
+ *
+ * Pass the same `refRadius`/`curve` you hand to <CurvedSky>.
+ */
+export function curveSunDir(
+  sunDir: readonly [number, number, number],
+  refRadius: number,
+  curve: number,
+): [number, number, number] {
+  const p = curveUniforms.uCurvePower.value
+  const dropUnit =
+    curve *
+    Math.pow(refRadius, p - 1) *
+    (Math.pow(Math.abs(sunDir[0]), p) + Math.pow(Math.abs(sunDir[2]), p))
+
+  const x = sunDir[0]
+  const y = sunDir[1] - dropUnit
+  const z = sunDir[2]
+  const len = Math.hypot(x, y, z) || 1
+  return [x / len, y / len, z / len]
+}
+
 type Props = ComponentProps<typeof Sky> & {
   /** Horizontal radius the bend is keyed to — match the world disc radius. */
   refRadius?: number
@@ -71,12 +101,11 @@ export default function CurvedSky({ refRadius = 25, curve = 0.02, ...props }: Pr
   const ref = useRef<ComponentRef<typeof Sky>>(null)
 
   useLayoutEffect(() => {
+    skyRadius.value = refRadius
+    skyCurve.value = curve
     const mesh = ref.current
     if (mesh) patchSkyMaterial(mesh.material)
-  }, [])
-
-  skyRadius.value = refRadius
-  skyCurve.value = curve
+  }, [refRadius, curve])
 
   return <Sky ref={ref} {...props} />
 }

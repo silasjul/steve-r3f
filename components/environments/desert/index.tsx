@@ -6,7 +6,7 @@ import { DirectionalLight, MathUtils, MeshStandardMaterial } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Ground from '../_ground'
-import CurvedSky from '../_curved-sky'
+import CurvedSky, { curveSunDir } from '../_curved-sky'
 import { EnvConfigProvider } from '../_env-config'
 import { desertConfig as C } from './config'
 import { getOrCreateMaterial, usePixelTexture } from '@/components/blocks/_block'
@@ -130,6 +130,12 @@ export default function Desert() {
     ]
   }, [skyElev, skyAzimuth])
 
+  // Light direction bent to match where the sun visually sits in the curved sky.
+  const lightDir = useMemo(
+    () => curveSunDir(sunDir, radius, skyCurve),
+    [sunDir, radius, skyCurve],
+  )
+
   return (
     <EnvConfigProvider value={C}>
       <color attach="background" args={[bg]} />
@@ -143,7 +149,7 @@ export default function Desert() {
       <ambientLight intensity={ambientInt} />
       <directionalLight
         ref={sunRef}
-        position={[sunDir[0] * lightDist, sunDir[1] * lightDist, sunDir[2] * lightDist]}
+        position={[lightDir[0] * lightDist, lightDir[1] * lightDist, lightDir[2] * lightDist]}
         intensity={sunInt}
         color={sunColor}
         castShadow

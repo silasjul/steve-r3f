@@ -6,7 +6,7 @@ import { DirectionalLight, MathUtils } from 'three'
 import { useControls, folder } from 'leva'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import Ground from '../_ground'
-import CurvedSky from '../_curved-sky'
+import CurvedSky, { curveSunDir } from '../_curved-sky'
 import { EnvConfigProvider } from '../_env-config'
 import { overworldNightConfig as C } from './config'
 import { useGrassTopMaterial } from '@/components/blocks/grass-block'
@@ -20,10 +20,12 @@ import CreeperScatter from '@/components/scatter/creeper-scatter'
 import EndermanScatter from '@/components/scatter/enderman-scatter'
 import ZombieScatter from '@/components/scatter/zombie-scatter'
 import ChickenJockeyScatter from '@/components/scatter/chicken-jockey-scatter'
+import Clouds from '../_clouds'
 import WorldCurve from '@/components/world-curve'
 import { useEnvStore } from '@/store/env-store'
 import { WindClock, useWindControls } from '@/components/wind'
 
+useTexture.preload('/textures/clouds.png')
 useTexture.preload('/textures/grass_block_top.png')
 useTexture.preload('/textures/short_grass.png')
 useTexture.preload('/textures/poppy.png')
@@ -132,6 +134,12 @@ export default function OverworldNight() {
     return [Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)]
   }, [skyElev, skyAzimuth])
 
+  // Light direction bent to match where the moon visually sits in the curved sky.
+  const lightDir = useMemo(
+    () => curveSunDir(sunDir, radius, skyCurve),
+    [sunDir, radius, skyCurve],
+  )
+
   return (
     <EnvConfigProvider value={C}>
       <color attach="background" args={[bg]} />
@@ -140,7 +148,7 @@ export default function OverworldNight() {
       <ambientLight intensity={ambientInt} />
       <directionalLight
         ref={sunRef}
-        position={[sunDir[0] * lightDist, sunDir[1] * lightDist, sunDir[2] * lightDist]}
+        position={[lightDir[0] * lightDist, lightDir[1] * lightDist, lightDir[2] * lightDist]}
         intensity={sunInt}
         color={sunColor}
         castShadow
@@ -170,6 +178,7 @@ export default function OverworldNight() {
       <WindClock />
 
       <Ground material={material} radius={radius} speed={walkSpeed} />
+      <Clouds speed={walkSpeed} coverage={0.36} mapOffset={{ x: 73, z: 137 }} />
 
       <ScatterWorld speed={walkSpeed} radius={radius} walkCorridorWidth={walkCorridorWidth}>
         <TreeScatter />

@@ -139,7 +139,7 @@ export default function WorldCurve() {
     };
   }, []);
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, controls }) => {
     if (enabled) {
       uniforms.uCurveX.value = strengthX;
       uniforms.uCurveZ.value = strengthZ;
@@ -149,7 +149,18 @@ export default function WorldCurve() {
       uniforms.uCurveZ.value = 0;
     }
     if (followCamera) {
-      uniforms.uCurveCenter.value.set(camera.position.x, 0, camera.position.z);
+      // Center on the camera's orbit *target* (the player), not the eye. The
+      // player is fixed at the world origin while the camera orbits around it,
+      // so following the eye would re-center the bend every time you orbit and
+      // make the whole world — and its shadows — swim. Following the target
+      // keeps the curve static in world space, so shadows don't move with the
+      // camera. Falls back to the eye if no controls are active.
+      const target = (controls as { target?: Vector3 } | null)?.target;
+      if (target) {
+        uniforms.uCurveCenter.value.set(target.x, 0, target.z);
+      } else {
+        uniforms.uCurveCenter.value.set(camera.position.x, 0, camera.position.z);
+      }
     } else {
       uniforms.uCurveCenter.value.set(centerX, 0, centerZ);
     }
